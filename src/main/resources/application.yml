@@ -1,0 +1,20 @@
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5480/car_rest_app
+    username: postgres
+    password: 1111
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      schema: car_rest
+
+  jpa:
+    properties:
+      hibernate:
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+    show-sql: true
+    hibernate:
+      ddl-auto: none
+
+  flyway:
+    default-schema: car_rest
+    create-schemas: true

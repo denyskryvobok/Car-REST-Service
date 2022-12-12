@@ -1,0 +1,16 @@
+services:
+  db:
+    container_name: car_rest
+    image: postgres:15.1-alpine
+    restart: always
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: 1111
+      POSTGRES_DB: car_rest_app
+    volumes:
+      - db:/var/lib/postgresql/data
+      - .\src\main\resources\db\db_init.csv:/tmp/db_init.csv
+    ports:
+      - "5480:5432"
+volumes:
+  db:
