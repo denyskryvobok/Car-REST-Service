@@ -37,7 +37,7 @@ public class Model {
     @Column(name = "model")
     private String model;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "model")
+    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REFRESH, CascadeType.MERGE}, mappedBy = "model")
     @ToString.Exclude
     private Set<Car> cars = new HashSet<>();
 

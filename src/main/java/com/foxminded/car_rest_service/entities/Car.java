@@ -47,7 +47,10 @@ public class Car {
     @ToString.Exclude
     private Manufacturer manufacturer;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "car", orphanRemoval = true)
+    @OneToMany(cascade = {CascadeType.PERSIST,
+                          CascadeType.MERGE,
+                          CascadeType.REFRESH,
+                          CascadeType.REMOVE}, mappedBy = "car", orphanRemoval = true)
     @ToString.Exclude
     private Set<CarCategoryInfo> carCategories = new HashSet<>();
 

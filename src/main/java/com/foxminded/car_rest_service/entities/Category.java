@@ -1,5 +1,12 @@
 package com.foxminded.car_rest_service.entities;
 
+import lombok.AllArgsConstructor;
+import lombok.Getter;
+import lombok.NoArgsConstructor;
+import lombok.Setter;
+import lombok.ToString;
+import org.hibernate.Hibernate;
+
 import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -8,14 +15,6 @@ import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.OneToMany;
 import javax.persistence.Table;
-
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
-import lombok.ToString;
-import org.hibernate.Hibernate;
-
 import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
@@ -36,7 +35,10 @@ public class Category {
     @Column(name = "category")
     private String category;
 
-    @OneToMany(cascade = CascadeType.ALL, mappedBy = "category", orphanRemoval = true)
+    @OneToMany(cascade = {CascadeType.PERSIST,
+                          CascadeType.MERGE,
+                          CascadeType.REFRESH,
+                          CascadeType.REMOVE}, mappedBy = "category", orphanRemoval = true)
     @ToString.Exclude
     private Set<CarCategoryInfo> carCategories = new HashSet<>();
 
