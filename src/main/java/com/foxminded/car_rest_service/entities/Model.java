@@ -26,7 +26,7 @@ import java.util.Set;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "models")
+@Table(name = "model")
 public class Model {
 
     @Id

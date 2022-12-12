@@ -29,7 +29,7 @@ import java.util.Set;
 @ToString
 @NoArgsConstructor
 @AllArgsConstructor
-@Table(name = "cars")
+@Table(name = "car")
 public class Car {
 
     @Id
@@ -49,7 +49,7 @@ public class Car {
 
     @OneToMany(cascade = CascadeType.ALL, mappedBy = "car", orphanRemoval = true)
     @ToString.Exclude
-    private Set<CarCategory> carCategories = new HashSet<>();
+    private Set<CarCategoryInfo> carCategories = new HashSet<>();
 
     @Override
     public boolean equals(Object o) {
