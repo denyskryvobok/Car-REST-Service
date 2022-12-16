@@ -40,7 +40,7 @@ public class Manufacturer {
     @Column(name = "year")
     private Integer year;
 
-    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REFRESH, CascadeType.MERGE}, mappedBy = "manufacturer")
+    @OneToMany(cascade = {CascadeType.PERSIST, CascadeType.REFRESH, CascadeType.MERGE, CascadeType.REMOVE}, mappedBy = "manufacturer")
     @ToString.Exclude
     private Set<Car> cars = new HashSet<>();
 
