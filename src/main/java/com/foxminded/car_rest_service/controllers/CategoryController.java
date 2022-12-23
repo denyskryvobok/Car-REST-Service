@@ -1,10 +1,9 @@
 package com.foxminded.car_rest_service.controllers;
 
-import com.foxminded.car_rest_service.entities.Category;
 import com.foxminded.car_rest_service.mapstruct.dto.category.CategoryBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.category.CategoryDTO;
-import com.foxminded.car_rest_service.mapstruct.mapper.CategoryMapper;
 import com.foxminded.car_rest_service.services.CategoryService;
+import com.foxminded.car_rest_service.utils.Mappings;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -24,61 +23,50 @@ import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import java.util.List;
 
-import static java.util.stream.Collectors.toList;
-
 @Slf4j
 @Validated
 @RestController
-@RequestMapping("/api/v1/categories")
+@RequestMapping(Mappings.API_V1_CATEGORIES)
 public class CategoryController {
 
     @Autowired
     private CategoryService categoryService;
 
-    @Autowired
-    private CategoryMapper mapper;
-
     @GetMapping
-    public List<CategoryBasicDTO> getAllCategories(Pageable pageable) {
+    public ResponseEntity<List<CategoryBasicDTO>> getAllCategories(Pageable pageable) {
         log.info("GetAllCategories started");
 
-        return categoryService.getAllCategories(pageable).stream()
-                .map(category -> mapper.categoryToCategoryBasicDTO(category))
-                .collect(toList());
+        return new ResponseEntity<>(categoryService.getAllCategories(pageable), HttpStatus.OK);
     }
 
-    @GetMapping("{name}")
+    @GetMapping(Mappings.GET_CATEGORY_BY_NAME)
     public ResponseEntity<CategoryDTO> getCategoryWithCarsByName(@NotBlank @PathVariable(name = "name") String name) {
-        log.info("GetCategoryWithCarsByName started");
+        log.info("GetCategoryWithCarsByName started with name: {}", name);
 
-        return ResponseEntity.ok().body(mapper.categoryToCategoryDTO(categoryService.getCategoryWithCarsByName(name)));
+        return new ResponseEntity<>(categoryService.getCategoryWithCarsByName(name), HttpStatus.OK);
     }
 
     @PostMapping
     public ResponseEntity<CategoryBasicDTO> createCategory(@Valid @RequestBody CategoryBasicDTO categoryBasicDTO) {
         log.info("CreateCategory started with input: {}", categoryBasicDTO);
 
-        Category category = categoryService.createCategory(mapper.categoryBasicToCategory(categoryBasicDTO));
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.categoryToCategoryBasicDTO(category));
+        return new ResponseEntity<>(categoryService.createCategory(categoryBasicDTO), HttpStatus.CREATED);
     }
 
-    @PutMapping("{id}")
+    @PutMapping(Mappings.UPDATE_CATEGORY_BY_ID)
     public ResponseEntity<CategoryBasicDTO> updateCategory(@PathVariable("id") Long id,
                                                            @Valid @RequestBody CategoryBasicDTO categoryBasicDTO) {
         log.info("UpdateModel started with id: {}, categoryBasicDTO: {}", id, categoryBasicDTO);
 
-        Category category = categoryService.updateCategory(id, mapper.categoryBasicToCategory(categoryBasicDTO));
-
-        return ResponseEntity.ok().body(mapper.categoryToCategoryBasicDTO(category));
+        return new ResponseEntity<>(categoryService.updateCategory(id, categoryBasicDTO), HttpStatus.OK);
     }
 
-    @DeleteMapping("/{name}")
+    @DeleteMapping(Mappings.DELETE_CATEGORY_BY_NAME)
     public ResponseEntity<?> deleteCategoryByName(@NotBlank @PathVariable(name = "name") String name) {
         log.info("DeleteCategoryByName started with name: {}", name);
 
         categoryService.deleteCategoryByName(name);
 
-        return ResponseEntity.noContent().build();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

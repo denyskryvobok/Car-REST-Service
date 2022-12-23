@@ -1,10 +1,9 @@
 package com.foxminded.car_rest_service.controllers;
 
-import com.foxminded.car_rest_service.entities.Car;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarWithoutCategoriesDTO;
-import com.foxminded.car_rest_service.mapstruct.mapper.CarMapper;
 import com.foxminded.car_rest_service.services.CarService;
+import com.foxminded.car_rest_service.utils.Mappings;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -23,85 +22,69 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.constraints.NotBlank;
 import java.util.List;
 
-import static java.util.stream.Collectors.toList;
-
 @Slf4j
 @Validated
 @RestController
-@RequestMapping("/api/v1/cars")
+@RequestMapping(Mappings.API_V1_CARS)
 public class CarController {
 
     @Autowired
     private CarService carService;
 
-    @Autowired
-    private CarMapper mapper;
-
     @GetMapping
-    public List<CarDTO> getAllCars(Pageable pageable) {
+    public ResponseEntity<List<CarDTO>> getAllCars(Pageable pageable) {
         log.info("GetAllCars started");
 
-        return carService.getAllCars(pageable).stream()
-                .map(car -> mapper.carToCarDTO(car))
-                .collect(toList());
+        return new ResponseEntity<>(carService.getAllCars(pageable), HttpStatus.OK);
     }
 
-    @GetMapping("manufacturer")
-    public List<CarDTO> getAllCarsByManufacturer(@NotBlank @RequestParam String manufacturer, Pageable pageable) {
+    @GetMapping(Mappings.GET_CARS_BY_MANUFACTURER)
+    public ResponseEntity<List<CarDTO>> getAllCarsByManufacturer(@NotBlank @RequestParam String manufacturer, Pageable pageable) {
         log.info("GetAllCarsByManufacturer started with manufacturer: {}", manufacturer);
 
-        return carService.getAllCarsByManufacturer(manufacturer, pageable).stream()
-                .map(car -> mapper.carToCarDTO(car))
-                .collect(toList());
+        return new ResponseEntity<>(carService.getAllCarsByManufacturer(manufacturer, pageable), HttpStatus.OK);
     }
 
-    @GetMapping("/manufacturer/year")
-    public List<CarDTO> getAllCarsByManufacturerAndMinYear(@NotBlank @RequestParam String manufacturer,
+    @GetMapping(Mappings.GET_CARS_BY_MANUFACTURER_AND_YEAR)
+    public ResponseEntity<List<CarDTO>> getAllCarsByManufacturerAndMinYear(@NotBlank @RequestParam String manufacturer,
                                                            @RequestParam Integer year,
                                                            Pageable pageable) {
         log.info("GetAllCarsByManufacturerAndMinYear started with manufacturer: {}, year: {}", manufacturer, year);
 
-        return carService.getAllCarsByManufacturerAndMinYear(manufacturer, year, pageable).stream()
-                .map(car -> mapper.carToCarDTO(car))
-                .collect(toList());
+        return new ResponseEntity<>(carService.getAllCarsByManufacturerAndMinYear(manufacturer, year, pageable), HttpStatus.OK);
     }
 
-    @PostMapping("manufacturer/{manufacturer}/model/{model}/year/{year}")
+    @PostMapping(Mappings.CREATE_CAR)
     public ResponseEntity<CarWithoutCategoriesDTO> createCar(@NotBlank @PathVariable(name = "manufacturer") String manufacturer,
                                                              @NotBlank @PathVariable(name = "model") String model,
                                                              @PathVariable(name = "year") Integer year) {
         log.info("CreateCar started with manufacturer: {}, model: {}, year: {} ", manufacturer, model, year);
 
-        Car car = carService.createCar(manufacturer, model, year);
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(mapper.carToCarWithoutCategoriesDTO(car));
+        return new ResponseEntity<>(carService.createCar(manufacturer, model, year), HttpStatus.CREATED);
     }
 
-    @DeleteMapping("{id}")
+    @DeleteMapping(Mappings.DELETE_CAR_BY_ID)
     public ResponseEntity<?> deleteCarById(@PathVariable(name = "id") Long id) {
         log.info("DeleteCarById started with id: {}", id);
 
         carService.deleteCarById(id);
 
-        return ResponseEntity.noContent().build();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @PutMapping("add/{id}/category/{name}")
+    @PutMapping(Mappings.ADD_CAR_TO_CATEGORY)
     public ResponseEntity<CarDTO> addCarToCategory(@PathVariable(name = "id") Long id,
                                                    @NotBlank @PathVariable(name = "name") String name) {
         log.info("AddCarToCategory started with id: {}, name: {}", id, name);
 
-        return ResponseEntity.ok().body(mapper.carToCarDTO(carService.addCarToCategory(id, name)));
+        return new ResponseEntity<>(carService.addCarToCategory(id, name), HttpStatus.OK);
     }
 
-    @PutMapping("remove/{id}/category/{name}")
+    @PutMapping(Mappings.DELETE_CAR_FROM_CATEGORY)
     public ResponseEntity<CarDTO> removeCarFromCategory(@PathVariable(name = "id") Long id,
                                                         @NotBlank @PathVariable(name = "name") String name) {
         log.info("RemoveCarFromCategory started with id: {}, name: {}", id, name);
 
-        Car car = carService.removeCarFromCategory(id, name);
-
-        return ResponseEntity.ok().body(mapper.carToCarDTO(car));
+        return new ResponseEntity<>(carService.removeCarFromCategory(id, name), HttpStatus.OK);
     }
-
 }

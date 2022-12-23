@@ -1,18 +1,19 @@
 package com.foxminded.car_rest_service.services;
 
-import com.foxminded.car_rest_service.entities.Model;
+import com.foxminded.car_rest_service.mapstruct.dto.model.ModelBasicDTO;
+import com.foxminded.car_rest_service.mapstruct.dto.model.ModelDTO;
 import org.springframework.data.domain.Pageable;
 
 import java.util.List;
 
 public interface ModelService {
-    List<Model> getAllModels(Pageable pageable);
+    List<ModelBasicDTO> getAllModels(Pageable pageable);
 
-    Model getModelWithCarsByName(String name);
+    ModelDTO getModelWithCarsByName(String name);
 
-    Model createModel(Model model);
+    ModelBasicDTO createModel(ModelBasicDTO modelBasicDTO);
 
-    Model updateModel(Long id, Model model);
+    ModelBasicDTO updateModel(Long id, ModelBasicDTO modelBasicDTO);
 
     void deleteModelByName(String name);
 }

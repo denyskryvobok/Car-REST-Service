@@ -1,10 +1,9 @@
 package com.foxminded.car_rest_service.controllers;
 
-import com.foxminded.car_rest_service.entities.Manufacturer;
 import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerDTO;
-import com.foxminded.car_rest_service.mapstruct.mapper.ManufacturerMapper;
 import com.foxminded.car_rest_service.services.ManufacturerService;
+import com.foxminded.car_rest_service.utils.Mappings;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Pageable;
@@ -23,81 +22,62 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Slf4j
 @Validated
 @RestController
-@RequestMapping("/api/v1/manufacturers")
+@RequestMapping(Mappings.API_V1_MANUFACTURERS)
 public class ManufacturerController {
 
     @Autowired
     private ManufacturerService manufacturerService;
 
-    @Autowired
-    private ManufacturerMapper mapper;
-
     @GetMapping
-    public List<String> getAllUniqueManufacturers(Pageable pageable) {
+    public ResponseEntity<List<String>> getAllUniqueManufacturers(Pageable pageable) {
         log.info("GetAllUniqueManufacturers started");
 
-        return manufacturerService.getAllUniqueManufacturers(pageable);
+        return new ResponseEntity<>(manufacturerService.getAllUniqueManufacturers(pageable), HttpStatus.OK);
     }
 
-    @GetMapping("{name}")
-    public List<ManufacturerDTO> getAllManufacturersByName(@NotBlank @PathVariable(name = "name") String name,
-                                                           Pageable pageable) {
-        log.info("GetAllManufacturersByName started");
+    @GetMapping(Mappings.GET_MANUFACTURER_BY_NAME)
+    public ResponseEntity<List<ManufacturerDTO>> getAllManufacturersByName(@NotBlank @PathVariable("name") String name,
+                                                                           Pageable pageable) {
+        log.info("GetAllManufacturersByName started with name: {}", name);
 
-        return manufacturerService.getAllManufacturersByName(name, pageable).stream()
-                .map(manufacturer -> mapper.manufacturerToManufacturerDTO(manufacturer))
-                .collect(Collectors.toList());
+        return new ResponseEntity<>(manufacturerService.getAllManufacturersByName(name, pageable), HttpStatus.OK);
     }
 
     @PostMapping
     public ResponseEntity<ManufacturerBasicDTO> createManufacturer(@Valid @RequestBody ManufacturerBasicDTO manufacturerDTO) {
         log.info("CreateManufacturer started with input: {}", manufacturerDTO);
 
-        Manufacturer manufacturerRequest = mapper.manufacturerBasicDTOToManufacturer(manufacturerDTO);
-
-        Manufacturer manufacturer = manufacturerService.createManufacturer(manufacturerRequest);
-
-        var manufacturerResponse = mapper.manufacturerToManufacturerBasicDTO(manufacturer);
-
-
-        return ResponseEntity.status(HttpStatus.CREATED).body(manufacturerResponse);
+        return new ResponseEntity<>(manufacturerService.createManufacturer(manufacturerDTO), HttpStatus.CREATED);
     }
 
-    @PutMapping("{id}")
+    @PutMapping(Mappings.UPDATE_MANUFACTURER_BY_ID)
     public ResponseEntity<ManufacturerBasicDTO> updateManufacturer(@PathVariable("id") Long id,
-                                                                   @Valid @RequestBody ManufacturerBasicDTO manufacturerDTO) {
-        log.info("UpdateManufacturer started with id: {}, manufacturerDTO: {}", id, manufacturerDTO);
+                                                                   @Valid @RequestBody ManufacturerBasicDTO manufacturerBasicDTO) {
+        log.info("UpdateManufacturer started with id: {}, manufacturerBasicDTO: {}", id, manufacturerBasicDTO);
 
-        Manufacturer manufacturerRequest = mapper.manufacturerBasicDTOToManufacturer(manufacturerDTO);
-
-        Manufacturer manufacturer = manufacturerService.updateManufacturer(id, manufacturerRequest);
-
-        var manufacturerResponse = mapper.manufacturerToManufacturerBasicDTO(manufacturer);
-
-        return ResponseEntity.ok().body(manufacturerResponse);
+        return new ResponseEntity<>(manufacturerService.updateManufacturer(id, manufacturerBasicDTO), HttpStatus.OK);
     }
 
-    @DeleteMapping("/{name}/year/{year}")
+    @DeleteMapping(Mappings.DELETE_MANUFACTURER_BY_NAME_AND_YEAR)
     public ResponseEntity<?> deleteManufacturerByNameAndYear(@NotBlank @PathVariable(name = "name") String name,
                                                              @PathVariable(name = "year") Integer year) {
         log.info("DeleteManufacturerByNameAndYear started with name: {}, year: {}", name, year);
 
         manufacturerService.deleteManufacturerByNameAndYear(name, year);
 
-        return ResponseEntity.noContent().build();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
-    @DeleteMapping("{name}")
+    @DeleteMapping(Mappings.DELETE_MANUFACTURER_BY_NAME)
     public ResponseEntity<?> deleteAllManufacturerByName(@NotBlank @PathVariable(name = "name") String name) {
-        log.info("DeleteManufacturer started with name: {}", name);
+        log.info("DeleteManufacturerByName started with name: {}", name);
 
         manufacturerService.deleteAllManufacturerByName(name);
 
-        return ResponseEntity.noContent().build();
+        return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 }

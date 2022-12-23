@@ -1,9 +1,13 @@
 package com.foxminded.car_rest_service.exceptions.handlers;
 
+import com.foxminded.car_rest_service.exceptions.custom.DataAlreadyExistException;
+import com.foxminded.car_rest_service.exceptions.custom.DataNotFoundException;
+import com.foxminded.car_rest_service.exceptions.response.ErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.ValidationErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.Violation;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -14,7 +18,29 @@ import javax.validation.ConstraintViolationException;
 
 @Slf4j
 @RestControllerAdvice
-public class ValidationErrorAdvice {
+public class AppExceptionAdvice {
+
+    @ResponseStatus(HttpStatus.NOT_FOUND)
+    @ExceptionHandler(DataNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handelDataNotFoundException(DataNotFoundException e) {
+        log.info("HandelDataNotFoundException started");
+
+        HttpStatus httpStatus = HttpStatus.NOT_FOUND;
+        ErrorResponse errorResponse = new ErrorResponse(httpStatus.value(), e.getMessage());
+
+        return ResponseEntity.status(httpStatus).body(errorResponse);
+    }
+
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    @ExceptionHandler(DataAlreadyExistException.class)
+    public ResponseEntity<ErrorResponse> handelDataAlreadyExistException(DataAlreadyExistException e) {
+        log.info("HandelDataAlreadyExistException started");
+
+        HttpStatus httpStatus = HttpStatus.UNPROCESSABLE_ENTITY;
+        ErrorResponse errorResponse = new ErrorResponse(httpStatus.value(), e.getMessage());
+
+        return ResponseEntity.status(httpStatus).body(errorResponse);
+    }
 
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     @ExceptionHandler(ConstraintViolationException.class)
