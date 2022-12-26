@@ -2,6 +2,7 @@ package com.foxminded.car_rest_service.controllers;
 
 import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelBasicDTO;
+import com.foxminded.car_rest_service.mapstruct.dto.model.ModelDTO;
 import com.foxminded.car_rest_service.services.ModelService;
 import com.foxminded.car_rest_service.utils.Mappings;
 import lombok.extern.slf4j.Slf4j;
@@ -14,6 +15,8 @@ import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
+
+import java.util.List;
 
 import static java.lang.String.format;
 
@@ -32,7 +35,12 @@ public class ModelController {
         log.info("GetAllModels started");
 
         ResultModel resultModel = new ResultModel();
-        resultModel.setData(modelService.getAllModels(pageable));
+        List<ModelBasicDTO> models = modelService.getAllModels(pageable);
+        if (models.isEmpty()) {
+            resultModel.setMassage("Models not found");
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
+        resultModel.setData(models);
 
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
@@ -42,7 +50,13 @@ public class ModelController {
         log.info("GetModelWithCarsByName started with name: {}", name);
 
         ResultModel resultModel = new ResultModel();
-        resultModel.setData(modelService.getModelWithCarsByName(name));
+
+        ModelDTO model = modelService.getModelWithCarsByName(name);
+        if (model == null) {
+            resultModel.setMassage(format("Model with name(%s) not found", name));
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
+        resultModel.setData(model);
 
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }

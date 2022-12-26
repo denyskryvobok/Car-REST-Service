@@ -52,14 +52,10 @@ class CategoryServiceTest extends TestcontainersConfig {
     }
 
     @Test
-    void getCategoryWithCarsByName_shouldReturnEmptyCategory_whenCategoryNotExists() {
+    void getCategoryWithCarsByName_shouldReturnNull_whenCategoryNotExists() {
         CategoryDTO actual = categoryService.getCategoryWithCarsByName("INPUT");
 
-        assertAll(
-                () -> assertNull(actual.getId()),
-                () -> assertNull(actual.getCategory()),
-                () -> assertTrue(actual.getCars().isEmpty())
-        );
+        assertNull(actual);
     }
 
     @Test

@@ -69,7 +69,26 @@ class CarControllerTest {
     }
 
     @Test
-    void getAllCarsByManufacturer_shouldReturnCarDTOs_whenCarsWithInputManufacturerExist() throws Exception {
+    void getAllCars_shouldReturnStatus404_whenCarsNotExist() throws Exception {
+        when(carService.getAllCars(any(Pageable.class))).thenReturn(List.of());
+
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/cars")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Cars not found");
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void getAllCarsByManufacturer_shouldReturn_whenCarsWithInputManufacturerExist() throws Exception {
         List<CarDTO> cars = getCarsWithManufacturers();
         when(carService.getAllCarsByManufacturer(anyString(), any(Pageable.class))).thenReturn(cars);
 
@@ -81,6 +100,26 @@ class CarControllerTest {
 
         ResultModel resultModel = new ResultModel();
         resultModel.setData(cars);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void getAllCarsByManufacturer_shouldReturnStatus404_whenCarsWithInputManufacturerNotExist() throws Exception {
+        when(carService.getAllCarsByManufacturer(anyString(), any(Pageable.class))).thenReturn(List.of());
+
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/cars/get/manufacturer")
+                        .param("manufacturer", "name")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Cars with manufacturer(name) not found");
 
         String expected = objectMapper.writeValueAsString(resultModel);
 
@@ -104,6 +143,27 @@ class CarControllerTest {
 
         ResultModel resultModel = new ResultModel();
         resultModel.setData(cars);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void getAllCarsByManufacturerAndMinYear_shouldReturnStatus404_whenCarsWithInputManufacturerNotExist() throws Exception {
+        when(carService.getAllCarsByManufacturerAndMinYear(anyString(), anyInt(), any(Pageable.class))).thenReturn(List.of());
+
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/cars/get/manufacturer/year")
+                        .param("manufacturer", "name")
+                        .param("year", "2000")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Cars with manufacturer(name) and year(2000) not found");
 
         String expected = objectMapper.writeValueAsString(resultModel);
 

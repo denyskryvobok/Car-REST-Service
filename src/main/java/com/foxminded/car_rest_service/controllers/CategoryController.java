@@ -2,6 +2,7 @@ package com.foxminded.car_rest_service.controllers;
 
 import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.mapstruct.dto.category.CategoryBasicDTO;
+import com.foxminded.car_rest_service.mapstruct.dto.category.CategoryDTO;
 import com.foxminded.car_rest_service.services.CategoryService;
 import com.foxminded.car_rest_service.utils.Mappings;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 
+import java.util.List;
+
 import static java.lang.String.format;
 
 @Slf4j
@@ -38,8 +41,13 @@ public class CategoryController {
         log.info("GetAllCategories started");
 
         ResultModel resultModel = new ResultModel();
-        resultModel.setData(categoryService.getAllCategories(pageable));
+        List<CategoryBasicDTO> categories = categoryService.getAllCategories(pageable);
 
+        if (categories.isEmpty()) {
+            resultModel.setMassage("Categories not found");
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
+        resultModel.setData(categories);
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
@@ -48,7 +56,12 @@ public class CategoryController {
         log.info("GetCategoryWithCarsByName started with name: {}", name);
 
         ResultModel resultModel = new ResultModel();
-        resultModel.setData(categoryService.getCategoryWithCarsByName(name));
+        CategoryDTO category = categoryService.getCategoryWithCarsByName(name);
+        if (category == null) {
+            resultModel.setMassage(format("Category with name(%s) not found", name));
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
+        resultModel.setData(category);
 
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }

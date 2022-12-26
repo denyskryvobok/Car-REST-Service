@@ -45,7 +45,7 @@ public class CategoryServiceImp implements CategoryService {
 
         Category category = categoryDAO.findCategoryWithCarsByName(name).orElseGet(() -> {
             log.error(format("Category with name(%s) wasn't found", name));
-            return new Category();
+            return null;
         });
 
         return mapper.categoryToCategoryDTO(category);

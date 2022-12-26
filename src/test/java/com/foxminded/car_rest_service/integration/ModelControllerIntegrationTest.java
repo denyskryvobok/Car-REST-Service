@@ -67,6 +67,23 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
+    void getModelWithCarsByName_shouldReturnStatus404_whenModelNotExists() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/get/name/{name}", "name")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Model with name(name) not found");
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
     void getModelWithCarsByName_shouldReturnStatus400_whenModelsExists() throws Exception {
         MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/get/name/{name}", "  ")
                         .contentType(MediaType.APPLICATION_JSON))

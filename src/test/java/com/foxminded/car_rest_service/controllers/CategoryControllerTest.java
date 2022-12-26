@@ -70,6 +70,25 @@ class CategoryControllerTest {
     }
 
     @Test
+    void getAllCategories_shouldReturnStatus404_whenCategoriesNotExist() throws Exception {
+        when(categoryService.getAllCategories(any(Pageable.class))).thenReturn(List.of());
+
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/categories")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Categories not found");
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
     void getCategoryWithCarsByName_shouldReturnCategoryDTO_whenCategoriesExist() throws Exception {
         CategoryDTO category = getCategoryWithCars();
         when(categoryService.getCategoryWithCarsByName(anyString())).thenReturn(category);
@@ -81,6 +100,25 @@ class CategoryControllerTest {
 
         ResultModel resultModel = new ResultModel();
         resultModel.setData(category);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void getCategoryWithCarsByName_shouldReturnStatus404_whenCategoriesNotExist() throws Exception {
+        when(categoryService.getCategoryWithCarsByName(anyString())).thenReturn(null);
+
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/categories/get/name/{name}", "Convertible")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Category with name(Convertible) not found");
 
         String expected = objectMapper.writeValueAsString(resultModel);
 

@@ -51,13 +51,9 @@ class ModelServiceTest extends TestcontainersConfig {
     }
 
     @Test
-    void getModelWithCarsByName_shouldReturnEmptyModelDTOWithCars_whenInputNameNotExist() {
+    void getModelWithCarsByName_shouldReturnNull_whenInputNameNotExist() {
         ModelDTO actual = modelService.getModelWithCarsByName("car");
-
-        assertAll(
-                () -> assertNull(actual.getId()),
-                () -> assertNull(actual.getModel()),
-                () -> assertTrue(actual.getCars().isEmpty()));
+        assertNull(actual);
     }
 
     @Test

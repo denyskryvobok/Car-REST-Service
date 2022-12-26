@@ -71,6 +71,26 @@ class ManufacturerControllerTest {
 
     @Test
     @WithMockUser
+    void getAllUniqueManufacturers_shouldReturnStatus404_whenManufacturersNotExist() throws Exception {
+        when(manufacturerService.getAllUniqueManufacturers(any(Pageable.class))).thenReturn(List.of());
+
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/manufacturers")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Manufacturers not found");
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    @WithMockUser
     void getAllManufacturersByName_shouldReturnManufactureDTOs_whenManufacturersExist() throws Exception {
         List<ManufacturerDTO> manufacturerDTOS = getAllManufacturers();
 
@@ -84,6 +104,26 @@ class ManufacturerControllerTest {
 
         ResultModel resultModel = new ResultModel();
         resultModel.setData(manufacturerDTOS);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    @WithMockUser
+    void getAllManufacturersByName_shouldReturnStatus404_whenManufacturersNotExist() throws Exception {
+        when(manufacturerService.getAllManufacturersByName(anyString(), any(Pageable.class))).thenReturn(List.of());
+
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/manufacturers/get/name/{name}", "Acura")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Manufacturers with name(Acura) not found");
 
         String expected = objectMapper.writeValueAsString(resultModel);
 

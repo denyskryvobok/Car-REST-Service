@@ -67,6 +67,25 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
     }
 
     @Test
+    void getAllCarsByManufacturer_shouldReturnStatus404_whenCarsWithInputManufacturerNotExist() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/cars/get/manufacturer")
+                        .param("manufacturer", "name")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Cars with manufacturer(name) not found");
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+
+    @Test
     void getAllCarsByManufacturerAndMinYear_shouldReturnCarDTOs_whenCarsWithInputManufacturerExist() throws Exception {
         List<CarDTO> cars = getCarsWithManufacturersByNameAndYear();
 
@@ -79,6 +98,25 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
 
         ResultModel resultModel = new ResultModel();
         resultModel.setData(cars);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void getAllCarsByManufacturerAndMinYear_shouldReturnStatus404_whenCarsWithInputManufacturerNotExist() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/cars/get/manufacturer/year")
+                        .param("manufacturer", "name")
+                        .param("year", "2000")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Cars with manufacturer(name) and year(2000) not found");
 
         String expected = objectMapper.writeValueAsString(resultModel);
 

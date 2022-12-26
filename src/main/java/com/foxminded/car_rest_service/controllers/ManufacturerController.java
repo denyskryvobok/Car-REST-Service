@@ -2,6 +2,7 @@ package com.foxminded.car_rest_service.controllers;
 
 import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerBasicDTO;
+import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerDTO;
 import com.foxminded.car_rest_service.services.ManufacturerService;
 import com.foxminded.car_rest_service.utils.Mappings;
 import lombok.extern.slf4j.Slf4j;
@@ -22,6 +23,8 @@ import org.springframework.web.bind.annotation.RestController;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 
+import java.util.List;
+
 import static java.lang.String.format;
 
 @Slf4j
@@ -38,7 +41,12 @@ public class ManufacturerController {
         log.info("GetAllUniqueManufacturers started");
 
         ResultModel resultModel = new ResultModel();
-        resultModel.setData(manufacturerService.getAllUniqueManufacturers(pageable));
+        List<String> manufacturers = manufacturerService.getAllUniqueManufacturers(pageable);
+        if (manufacturers.isEmpty()) {
+            resultModel.setMassage("Manufacturers not found");
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
+        resultModel.setData(manufacturers);
 
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
@@ -49,7 +57,12 @@ public class ManufacturerController {
         log.info("GetAllManufacturersByName started with name: {}", name);
 
         ResultModel resultModel = new ResultModel();
-        resultModel.setData(manufacturerService.getAllManufacturersByName(name, pageable));
+        List<ManufacturerDTO> manufacturers = manufacturerService.getAllManufacturersByName(name, pageable);
+        if (manufacturers.isEmpty()) {
+            resultModel.setMassage(format("Manufacturers with name(%s) not found", name));
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
+        resultModel.setData(manufacturers);
 
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }

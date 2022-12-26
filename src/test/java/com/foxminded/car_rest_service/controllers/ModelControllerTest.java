@@ -72,6 +72,26 @@ class ModelControllerTest {
     }
 
     @Test
+    void getAllModels_shouldReturnStatus404_whenModelsNotExists() throws Exception {
+        when(modelService.getAllModels(any(Pageable.class))).thenReturn(List.of());
+
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Models not found");
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+
+    }
+
+    @Test
     void getModelWithCarsByName_shouldReturnStatus200WithJsonResponseBody_whenModelsExists() throws Exception {
         ModelDTO modelDTO = getModelDTO();
         when(modelService.getModelWithCarsByName(anyString())).thenReturn(modelDTO);
@@ -83,6 +103,25 @@ class ModelControllerTest {
 
         ResultModel resultModel = new ResultModel();
         resultModel.setData(modelDTO);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    void getModelWithCarsByName_shouldReturnStatus404_whenModelNotExists() throws Exception {
+        when(modelService.getModelWithCarsByName(anyString())).thenReturn(null);
+
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/get/name/{name}", "Grand")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Model with name(Grand) not found");
 
         String expected = objectMapper.writeValueAsString(resultModel);
 

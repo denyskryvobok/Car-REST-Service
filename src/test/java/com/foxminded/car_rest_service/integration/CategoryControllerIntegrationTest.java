@@ -65,6 +65,23 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
     }
 
     @Test
+    void getCategoryWithCarsByName_shouldReturnStatus404_whenCategoriesNotExist() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/categories/get/name/{name}", "name")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Category with name(name) not found");
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
     @WithUserDetails("jamessmith")
     void createCategory_shouldReturnCategoryBasicDTO_whenInputCategoryNotExists() throws Exception {
         CategoryBasicDTO category = getBasicCategory(4L, "name");

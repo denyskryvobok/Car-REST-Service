@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
 
+import java.util.List;
+
 import static java.lang.String.format;
 
 @Slf4j
@@ -32,7 +34,13 @@ public class CarController {
         log.info("GetAllCars started");
 
         ResultModel resultModel = new ResultModel();
-        resultModel.setData(carService.getAllCars(pageable));
+        List<CarDTO> cars = carService.getAllCars(pageable);
+
+        if (cars.isEmpty()) {
+            resultModel.setMassage("Cars not found");
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
+        resultModel.setData(cars);
 
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
@@ -42,7 +50,14 @@ public class CarController {
         log.info("GetAllCarsByManufacturer started with manufacturer: {}", manufacturer);
 
         ResultModel resultModel = new ResultModel();
-        resultModel.setData(carService.getAllCarsByManufacturer(manufacturer, pageable));
+        List<CarDTO> cars = carService.getAllCarsByManufacturer(manufacturer, pageable);
+
+        if (cars.isEmpty()) {
+            resultModel.setMassage(format("Cars with manufacturer(%s) not found", manufacturer));
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
+
+        resultModel.setData(cars);
 
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
@@ -54,8 +69,13 @@ public class CarController {
         log.info("GetAllCarsByManufacturerAndMinYear started with manufacturer: {}, year: {}", manufacturer, year);
 
         ResultModel resultModel = new ResultModel();
-        resultModel.setData(carService.getAllCarsByManufacturerAndMinYear(manufacturer, year, pageable));
+        List<CarDTO> cars = carService.getAllCarsByManufacturerAndMinYear(manufacturer, year, pageable);
+        if (cars.isEmpty()) {
+            resultModel.setMassage(format("Cars with manufacturer(%s) and year(%s) not found", manufacturer, year));
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
 
+        resultModel.setData(cars);
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 

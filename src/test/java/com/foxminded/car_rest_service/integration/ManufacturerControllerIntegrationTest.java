@@ -10,6 +10,7 @@ import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerDTO
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelBasicDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -57,6 +58,24 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
 
         ResultModel resultModel = new ResultModel();
         resultModel.setData(manufacturerDTOS);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    @WithMockUser
+    void getAllManufacturersByName_shouldReturnStatus404_whenManufacturersNotExist() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/manufacturers/get/name/{name}", "name")
+                        .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Manufacturers with name(name) not found");
 
         String expected = objectMapper.writeValueAsString(resultModel);
 

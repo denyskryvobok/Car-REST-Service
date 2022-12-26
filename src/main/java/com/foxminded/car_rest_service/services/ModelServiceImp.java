@@ -46,7 +46,7 @@ public class ModelServiceImp implements ModelService {
 
         Model model = modelDAO.findModelWithCarsByName(name).orElseGet(() -> {
             log.info(format("Model with name(%s) wasn't found", name));
-            return new Model();
+            return null;
         });
 
         return mapper.modelToModelDTO(model);
