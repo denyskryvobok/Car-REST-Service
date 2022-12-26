@@ -2,9 +2,7 @@ package com.foxminded.car_rest_service.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foxminded.car_rest_service.dao.AppUserDAO;
-import com.foxminded.car_rest_service.exceptions.custom.DataAlreadyExistException;
-import com.foxminded.car_rest_service.exceptions.custom.DataNotFoundException;
-import com.foxminded.car_rest_service.exceptions.response.ErrorResponse;
+import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.exceptions.response.ValidationErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.Violation;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarWithoutCategoriesDTO;
@@ -29,9 +27,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -63,7 +59,10 @@ class CategoryControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(categories);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(categories);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -80,7 +79,10 @@ class CategoryControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(category);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(category);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -101,7 +103,10 @@ class CategoryControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(category);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(category);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -110,19 +115,17 @@ class CategoryControllerTest {
 
     @Test
     @WithMockUser
-    void createCategory_shouldReturnStatus422_whenDataAlreadyExistExceptionThrown() throws Exception {
-        when(categoryService.createCategory(any(CategoryBasicDTO.class)))
-                .thenThrow(new DataAlreadyExistException("Category with name(new) already exists"));
-
+    void createCategory_shouldReturnStatus422_whenCategoryAlreadyExists() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/categories")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(getBasicCategory(null, "new"))))
                 .andExpect(status().isUnprocessableEntity())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(422, "Category with name(new) already exists");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Category with name(new) already exist");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -161,7 +164,9 @@ class CategoryControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(dto);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(dto);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -173,18 +178,16 @@ class CategoryControllerTest {
     void updateCategory_shouldReturnStatus404_whenCategoryWasNotFound() throws Exception {
         CategoryBasicDTO dto = getBasicCategory(8L, "new");
 
-        when(categoryService.updateCategory(anyLong(), any(CategoryBasicDTO.class)))
-                .thenThrow(new DataNotFoundException("Category with id(8) wasn't found"));
-
         MvcResult mvcResult = mockMvc.perform(put("/api/v1/categories/update/id/{id}", 8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Category with id(8) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Category with id(8) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -194,6 +197,8 @@ class CategoryControllerTest {
     @Test
     @WithMockUser
     void deleteCategoryByName_shouldReturnStatus204_whenCategoryWasDeleted() throws Exception {
+        when(categoryService.deleteCategoryByName(anyString())).thenReturn(true);
+
         mockMvc.perform(delete("/api/v1/categories/delete/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
@@ -202,16 +207,17 @@ class CategoryControllerTest {
     @Test
     @WithMockUser
     void deleteCategoryByName_shouldReturnStatus404_whenCategoryWasNotFound() throws Exception {
-        doThrow(new DataNotFoundException("Category with name(name) wasn't found")).when(categoryService).deleteCategoryByName("name");
+        when(categoryService.deleteCategoryByName(anyString())).thenReturn(false);
 
         MvcResult mvcResult = mockMvc.perform(delete("/api/v1/categories/delete/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Category with name(name) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Category with name(name) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 

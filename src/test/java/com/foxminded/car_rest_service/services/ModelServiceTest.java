@@ -1,8 +1,6 @@
 package com.foxminded.car_rest_service.services;
 
 import com.foxminded.car_rest_service.entities.Model;
-import com.foxminded.car_rest_service.exceptions.custom.DataAlreadyExistException;
-import com.foxminded.car_rest_service.exceptions.custom.DataNotFoundException;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarWithoutModelDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelDTO;
@@ -20,8 +18,8 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ModelServiceTest extends TestcontainersConfig {
@@ -49,7 +47,7 @@ class ModelServiceTest extends TestcontainersConfig {
         ModelDTO actual = modelService.getModelWithCarsByName("Grand");
 
         assertAll(() -> assertEquals(expected.getId(), actual.getId()),
-                  () -> assertEquals(expected.getCars(), actual.getCars()));
+                () -> assertEquals(expected.getCars(), actual.getCars()));
     }
 
     @Test
@@ -61,6 +59,7 @@ class ModelServiceTest extends TestcontainersConfig {
                 () -> assertNull(actual.getModel()),
                 () -> assertTrue(actual.getCars().isEmpty()));
     }
+
     @Test
     void createModel_shouldReturnCreatedModelWithId_whenModelNotExist() {
         ModelBasicDTO expected = getModelBasicDTO(4L, "Car");
@@ -71,10 +70,13 @@ class ModelServiceTest extends TestcontainersConfig {
     }
 
     @Test
-    void createModel_shouldThrowDataAlreadyExistException_whenModelExist() {
-        assertThrows(DataAlreadyExistException.class,
-                    () ->  modelService.createModel(getModelBasicDTO(null, "Grand")));
+    void createModel_shouldReturnNull_whenModelExist() {
+        ModelBasicDTO actual = modelService.createModel(getModelBasicDTO(null, "Grand"));
+        System.out.println(actual);
+        assertNull(actual);
+
     }
+
     @Test
     void updateModel_shouldReturnModelBasicDTO_whenModelByIdExists() {
         ModelBasicDTO expected = getModelBasicDTO(3L, "NEW_NAME");
@@ -85,23 +87,25 @@ class ModelServiceTest extends TestcontainersConfig {
     }
 
     @Test
-    void updateModel_shouldThrowDataNotFoundException_whenModelByIdNotExist() {
-        assertThrows(DataNotFoundException.class,
-                     () -> modelService.updateModel(4L, getModelBasicDTO(4L, "NEW_NAME")));
-    }
-
-    @Test
-    void deleteModelByName_shouldDeleteModel_whenModelWithInputNameExists() {
-        modelService.deleteModelByName("Grand");
-
-        Model actual = entityManager.find(Model.class, 3L);
-
+    void updateModel_shouldReturnNull_whenModelByIdNotExist() {
+        ModelBasicDTO actual = modelService.updateModel(4L, getModelBasicDTO(4L, "NEW_NAME"));
         assertNull(actual);
     }
 
     @Test
-    void deleteModelByName_shouldThrowDataNotFoundException_whenModelWithInputNameNotExist() {
-        assertThrows(DataNotFoundException.class, () -> modelService.deleteModelByName("Car"));
+    void deleteModelByName_shouldDeleteModelAndReturnTrue_whenModelWithInputNameExists() {
+        boolean isDeleted = modelService.deleteModelByName("Grand");
+
+        Model actual = entityManager.find(Model.class, 3L);
+
+        assertTrue(isDeleted);
+        assertNull(actual);
+    }
+
+    @Test
+    void deleteModelByName_shouldReturnFalse_whenModelWithInputNameNotExist() {
+        boolean actual = modelService.deleteModelByName("Car");
+        assertFalse(actual);
     }
 
     private List<ModelBasicDTO> getModelBasicDTOs() {

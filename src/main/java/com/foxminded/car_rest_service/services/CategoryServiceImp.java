@@ -2,8 +2,6 @@ package com.foxminded.car_rest_service.services;
 
 import com.foxminded.car_rest_service.dao.CategoryDAO;
 import com.foxminded.car_rest_service.entities.Category;
-import com.foxminded.car_rest_service.exceptions.custom.DataAlreadyExistException;
-import com.foxminded.car_rest_service.exceptions.custom.DataNotFoundException;
 import com.foxminded.car_rest_service.mapstruct.dto.category.CategoryBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.category.CategoryDTO;
 import com.foxminded.car_rest_service.mapstruct.mapper.CategoryMapper;
@@ -14,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
@@ -57,12 +56,10 @@ public class CategoryServiceImp implements CategoryService {
     public CategoryBasicDTO createCategory(CategoryBasicDTO category) {
         log.info("CreateCategory started");
 
-        categoryDAO.findByName(category.getCategory()).ifPresent(c -> {
-            var exception = new DataAlreadyExistException(format("Category with name(%s) already exist", c));
-            log.error("Exception occurred during request processing: ", exception);
-            throw exception;
-        });
-
+        Optional<Category> optional = categoryDAO.findByName(category.getCategory());
+        if (optional.isPresent()) {
+            return null;
+        }
         return mapper.categoryToCategoryBasicDTO(categoryDAO.save(mapper.categoryBasicToCategory(category)));
     }
 
@@ -70,27 +67,20 @@ public class CategoryServiceImp implements CategoryService {
     public CategoryBasicDTO updateCategory(Long id, CategoryBasicDTO categoryInput) {
         log.info("UpdateCategory started with id: {}, category: {}", id, categoryInput);
 
-        Category category = categoryDAO.findById(id).orElseThrow(() -> {
-            var exception = new DataNotFoundException(format("Category with id(%d) wasn't found", id));
-            log.error("Exception occurred during request processing: ", exception);
-            return exception;
-        });
-
-        category.setCategory(categoryInput.getCategory());
-
-        return mapper.categoryToCategoryBasicDTO(categoryDAO.save(category));
+        return categoryDAO.findById(id)
+                .map((category -> {
+                    category.setCategory(categoryInput.getCategory());
+                    return mapper.categoryToCategoryBasicDTO(categoryDAO.save(category));
+                })).orElse(null);
     }
 
     @Override
-    public void deleteCategoryByName(String name) {
+    public boolean deleteCategoryByName(String name) {
         log.info("DeleteCategoryByName started with name: {}", name);
 
-        Category category = categoryDAO.findByName(name).orElseThrow(() -> {
-            var exception = new DataNotFoundException(format("Category with name(%s) wasn't found", name));
-            log.error("Exception occurred during request processing: ", exception);
-            return exception;
-        });
-
-        categoryDAO.delete(category);
+        return categoryDAO.findByName(name).map(category -> {
+            categoryDAO.delete(category);
+            return true;
+        }).orElse(false);
     }
 }

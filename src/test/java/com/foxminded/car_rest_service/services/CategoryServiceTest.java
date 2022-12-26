@@ -1,8 +1,6 @@
 package com.foxminded.car_rest_service.services;
 
 import com.foxminded.car_rest_service.entities.Category;
-import com.foxminded.car_rest_service.exceptions.custom.DataAlreadyExistException;
-import com.foxminded.car_rest_service.exceptions.custom.DataNotFoundException;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarWithoutCategoriesDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.category.CategoryBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.category.CategoryDTO;
@@ -19,8 +17,8 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CategoryServiceTest extends TestcontainersConfig {
@@ -69,13 +67,14 @@ class CategoryServiceTest extends TestcontainersConfig {
         CategoryBasicDTO expected = getBasicCategory(4L, "NEW");
 
         CategoryBasicDTO actual = categoryService.createCategory(getBasicCategory(null, "NEW"));
-        
+
         assertEquals(expected, actual);
     }
 
     @Test
-    void createCategory_shouldThrowDataAlreadyExistException_whenCategoryExists() {
-        assertThrows(DataAlreadyExistException.class, () -> categoryService.createCategory(getBasicCategory(null, "Wagon")));
+    void createCategory_shouldReturnNull_whenCategoryExists() {
+        CategoryBasicDTO actual = categoryService.createCategory(getBasicCategory(null, "Wagon"));
+        assertNull(actual);
     }
 
     @Test
@@ -88,21 +87,25 @@ class CategoryServiceTest extends TestcontainersConfig {
     }
 
     @Test
-    void updateCategory_shouldThrowDataNotFoundException_whenInputCategoryNotExists() {
-        assertThrows(DataNotFoundException.class, () -> categoryService.updateCategory(4L, getBasicCategory(4L, "new")));
-    }
-    @Test
-    void deleteCategoryByName_shouldDeleteCategory_whenCategoryWithInputNameExists() {
-        categoryService.deleteCategoryByName("Wagon");
-
-        Category actual = entityManager.find(Category.class, 3L);
-
+    void updateCategory_shouldReturnNull_whenInputCategoryNotExists() {
+        CategoryBasicDTO actual = categoryService.updateCategory(4L, getBasicCategory(4L, "new"));
         assertNull(actual);
     }
 
     @Test
-    void deleteCategoryByName_shouldThrowDataNotFoundException_whenCategoryWithInputNameNotExist() {
-        assertThrows(DataNotFoundException.class, () -> categoryService.deleteCategoryByName("NEW"));
+    void deleteCategoryByName_shouldDeleteCategoryAndReturnTrue_whenCategoryWithInputNameExists() {
+        boolean isDeleted = categoryService.deleteCategoryByName("Wagon");
+
+        Category actual = entityManager.find(Category.class, 3L);
+
+        assertNull(actual);
+        assertTrue(isDeleted);
+    }
+
+    @Test
+    void deleteCategoryByName_shouldReturnFalse_whenCategoryWithInputNameNotExist() {
+        boolean isDeleted = categoryService.deleteCategoryByName("NEW");
+        assertFalse(isDeleted);
     }
 
     private List<CategoryBasicDTO> getCategories() {

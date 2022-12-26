@@ -1,6 +1,6 @@
 package com.foxminded.car_rest_service.integration;
 
-import com.foxminded.car_rest_service.exceptions.response.ErrorResponse;
+import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.exceptions.response.ValidationErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.Violation;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarWithoutModelDTO;
@@ -36,7 +36,10 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(modelBasicDTOs);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(modelBasicDTOs);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -53,7 +56,10 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(modelDTO);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(modelDTO);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -88,7 +94,10 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(dto);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(dto);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -116,16 +125,17 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
 
     @Test
     @WithUserDetails("jamessmith")
-    void createModel_shouldReturnStatus422_whenDataAlreadyExistExceptionThrown() throws Exception {
+    void createModel_shouldReturnStatus422_whenModelAlreadyExist() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/models")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(getModelBasicDTO(null, "Regal"))))
                 .andExpect(status().isUnprocessableEntity())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(422, "Model with name(Regal) already exists");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Model with name(Regal) already exists");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -143,7 +153,11 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(dto);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(dto);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -161,9 +175,11 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Model with id(8) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Model with id(8) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
+
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -186,9 +202,11 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Model with name(name) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Model with name(name) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
+
 
         String actual = mvcResult.getResponse().getContentAsString();
 

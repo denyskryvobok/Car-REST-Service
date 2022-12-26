@@ -2,9 +2,7 @@ package com.foxminded.car_rest_service.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foxminded.car_rest_service.dao.AppUserDAO;
-import com.foxminded.car_rest_service.exceptions.custom.DataAlreadyExistException;
-import com.foxminded.car_rest_service.exceptions.custom.DataNotFoundException;
-import com.foxminded.car_rest_service.exceptions.response.ErrorResponse;
+import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.exceptions.response.ValidationErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.Violation;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarWithoutModelDTO;
@@ -30,9 +28,7 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.ArgumentMatchers.anyString;
-import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
@@ -64,7 +60,10 @@ class ModelControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(modelBasicDTOs);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(modelBasicDTOs);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -82,7 +81,10 @@ class ModelControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(modelDTO);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(modelDTO);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -108,7 +110,7 @@ class ModelControllerTest {
 
     @Test
     @WithMockUser
-    void createModel_shouldReturnStatus201WithJsonResponseBody_whenConstraintViolationException () throws Exception {
+    void createModel_shouldReturnStatus201WithJsonResponseBody_whenConstraintViolationException() throws Exception {
         ModelBasicDTO dto = getModelBasicDTO(1L, "NEW");
 
         when(modelService.createModel(any(ModelBasicDTO.class))).thenReturn(dto);
@@ -119,7 +121,10 @@ class ModelControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(dto);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(dto);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -147,19 +152,17 @@ class ModelControllerTest {
 
     @Test
     @WithMockUser
-    void createModel_shouldReturnStatus422_whenDataAlreadyExistExceptionThrown() throws Exception {
-        when(modelService.createModel(any(ModelBasicDTO.class)))
-                .thenThrow(new DataAlreadyExistException("Model with name(new) already exists"));
-
+    void createModel_shouldReturnStatus422_whenModelAlreadyExist() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/models")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(getModelBasicDTO(null, "new"))))
                 .andExpect(status().isUnprocessableEntity())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(422, "Model with name(new) already exists");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Model with name(new) already exists");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -179,7 +182,10 @@ class ModelControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(dto);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(dto);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -191,18 +197,16 @@ class ModelControllerTest {
     void updateModel_shouldReturnStatus404_whenModelWasNotFound() throws Exception {
         ModelBasicDTO dto = getModelBasicDTO(8L, "new");
 
-        when(modelService.updateModel(anyLong(), any(ModelBasicDTO.class)))
-                .thenThrow(new DataNotFoundException("Model with id(8) wasn't found"));
-
         MvcResult mvcResult = mockMvc.perform(put("/api/v1/models/update/id/{id}", 8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Model with id(8) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Model with id(8) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -212,6 +216,8 @@ class ModelControllerTest {
     @Test
     @WithMockUser
     void deleteModelByName_shouldReturnStatus204_whenModelWasDeleted() throws Exception {
+        when(modelService.deleteModelByName(anyString())).thenReturn(true);
+
         mockMvc.perform(delete("/api/v1/models/delete/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
@@ -220,16 +226,17 @@ class ModelControllerTest {
     @Test
     @WithMockUser
     void deleteModelByName_shouldReturnStatus404_whenModelWasNotFound() throws Exception {
-        doThrow(new DataNotFoundException("Model with name(name) wasn't found")).when(modelService).deleteModelByName("name");
+        when(modelService.deleteModelByName(anyString())).thenReturn(false);
 
         MvcResult mvcResult = mockMvc.perform(delete("/api/v1/models/delete/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Model with name(name) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Model with name(name) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -288,4 +295,3 @@ class ModelControllerTest {
         return modelBasicDTO;
     }
 }
-

@@ -15,5 +15,5 @@ public interface ModelService {
 
     ModelBasicDTO updateModel(Long id, ModelBasicDTO modelBasicDTO);
 
-    void deleteModelByName(String name);
+    boolean deleteModelByName(String name);
 }

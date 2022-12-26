@@ -2,9 +2,7 @@ package com.foxminded.car_rest_service.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foxminded.car_rest_service.dao.AppUserDAO;
-import com.foxminded.car_rest_service.exceptions.custom.DataAlreadyExistException;
-import com.foxminded.car_rest_service.exceptions.custom.DataNotFoundException;
-import com.foxminded.car_rest_service.exceptions.response.ErrorResponse;
+import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.exceptions.response.ValidationErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.Violation;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarDTO;
@@ -60,7 +58,10 @@ class CarControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(cars);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(cars);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -78,7 +79,10 @@ class CarControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(cars);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(cars);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -98,7 +102,10 @@ class CarControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(cars);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(cars);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -118,7 +125,10 @@ class CarControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(car);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(car);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -127,19 +137,17 @@ class CarControllerTest {
 
     @Test
     @WithMockUser
-    void createCar_shouldReturnStatus422_whenDataAlreadyExistExceptionThrown() throws Exception {
-        when(carService.createCar(anyString(), anyString(), anyInt()))
-                .thenThrow(new DataAlreadyExistException("Car already exists"));
-
+    void createCar_shouldReturnStatus422_whenCarAlreadyExist() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/cars/manufacturer/{manufacturer}/model/{model}/year/{year}",
                         "manufacturer", "model", 2000)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnprocessableEntity())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(422, "Car already exists");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Car with manufacturer:manufacturer, model:model, year:2000, already exist");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -167,7 +175,72 @@ class CarControllerTest {
 
     @Test
     @WithMockUser
+    void updateCar_shouldReturnStatus200_whenInputCarExist() throws Exception {
+        CarWithoutCategoriesDTO dto = getCarWithoutCategoriesDTOForUpdate();
+
+        when(carService.updateCar(any(CarWithoutCategoriesDTO.class))).thenReturn(dto);
+
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(dto);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    @WithMockUser
+    void updateCar_shouldReturnStatus422_whenManufacturerIsNull() throws Exception {
+        CarWithoutCategoriesDTO dto = getCarWithoutCategoriesDTOWithoutManufacturer();
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnprocessableEntity())
+                .andReturn();
+
+        ValidationErrorResponse error = new ValidationErrorResponse();
+        error.getViolations().add(new Violation("manufacturer", "must not be null"));
+
+        String expected = objectMapper.writeValueAsString(error);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    @WithMockUser
+    void updateCar_shouldReturnStatus404_whenCarIsNotFound() throws Exception {
+        CarWithoutCategoriesDTO dto = getCarWithoutCategoriesDTOForUpdate();
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Car with id(1) not found");
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    @WithMockUser
     void deleteById_shouldReturnStatus204_whenCarWasDeleted() throws Exception {
+        when(carService.deleteCarById(anyLong())).thenReturn(true);
+
         mockMvc.perform(delete("/api/v1/cars//delete/id/{id}", 1)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
@@ -176,16 +249,17 @@ class CarControllerTest {
     @Test
     @WithMockUser
     void deleteById_shouldReturnStatus404_whenCarWasNotFound() throws Exception {
-        doThrow(new DataNotFoundException("Car wasn't found")).when(carService).deleteCarById(1L);
+        when(carService.deleteCarById(anyLong())).thenReturn(false);
 
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/cars//delete/id/{id}", 1L)
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/cars/delete/id/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Car wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Car with id(1) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -204,7 +278,10 @@ class CarControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(car);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(car);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -213,18 +290,16 @@ class CarControllerTest {
 
     @Test
     @WithMockUser
-    void addCarToCategory_shouldReturnStatusCode404_whenInputCategoryNotExist() throws Exception {
-
-        when(carService.addCarToCategory(anyLong(), anyString())).thenThrow(new DataNotFoundException("Category wasn't found"));
-
+    void addCarToCategory_shouldReturnStatusCode404_whenCarByInputIdNotExist() throws Exception {
         MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/add/{id}/category/{name}", 1L, "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Category wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Car with input id(1) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -260,7 +335,9 @@ class CarControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(car);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(car);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -269,18 +346,16 @@ class CarControllerTest {
 
     @Test
     @WithMockUser
-    void removeCarFromCategory_shouldReturnStatusCode404_whenInputCategoryNotExist() throws Exception {
-
-        when(carService.removeCarFromCategory(anyLong(), anyString())).thenThrow(new DataNotFoundException("Category wasn't found"));
-
+    void removeCarFromCategory_shouldReturnStatusCode404_whenCarByInputIdNotExist() throws Exception {
         MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/remove/{id}/category/{name}", 1L, "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Category wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Car with input id(1) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -378,5 +453,25 @@ class CarControllerTest {
         carDTO.setCarCategories(categories);
 
         return carDTO;
+    }
+
+    private CarWithoutCategoriesDTO getCarWithoutCategoriesDTOForUpdate() {
+        CarWithoutCategoriesDTO carWithoutCategoriesDTO = new CarWithoutCategoriesDTO();
+
+        carWithoutCategoriesDTO.setId(1L);
+        carWithoutCategoriesDTO.setManufacturer(new ManufacturerBasicDTO(1L, "Acura", 2017));
+        carWithoutCategoriesDTO.setModel(new ModelBasicDTO(2L, "Regal"));
+
+        return carWithoutCategoriesDTO;
+    }
+
+    private CarWithoutCategoriesDTO getCarWithoutCategoriesDTOWithoutManufacturer() {
+        CarWithoutCategoriesDTO carWithoutCategoriesDTO = new CarWithoutCategoriesDTO();
+
+        carWithoutCategoriesDTO.setId(1L);
+        carWithoutCategoriesDTO.setManufacturer(null);
+        carWithoutCategoriesDTO.setModel(new ModelBasicDTO(4L, "NEW"));
+
+        return carWithoutCategoriesDTO;
     }
 }

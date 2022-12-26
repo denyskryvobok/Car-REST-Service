@@ -2,8 +2,6 @@ package com.foxminded.car_rest_service.services;
 
 import com.foxminded.car_rest_service.dao.ModelDAO;
 import com.foxminded.car_rest_service.entities.Model;
-import com.foxminded.car_rest_service.exceptions.custom.DataAlreadyExistException;
-import com.foxminded.car_rest_service.exceptions.custom.DataNotFoundException;
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelDTO;
 import com.foxminded.car_rest_service.mapstruct.mapper.ModelMapper;
@@ -14,6 +12,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.Optional;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
@@ -36,8 +35,8 @@ public class ModelServiceImp implements ModelService {
         List<Model> models = modelDAO.findAllPage(pageable);
 
         return models.stream()
-                     .map(model -> mapper.modelToModelBasicDTO(model))
-                     .collect(toList());
+                .map(model -> mapper.modelToModelBasicDTO(model))
+                .collect(toList());
     }
 
     @Override
@@ -56,13 +55,12 @@ public class ModelServiceImp implements ModelService {
     @Override
     public ModelBasicDTO createModel(ModelBasicDTO modelBasicDTO) {
         log.info("CreateModel started with input: {}", modelBasicDTO);
+        Optional<Model> optional = modelDAO.findByName(modelBasicDTO.getModel());
 
-        modelDAO.findByName(modelBasicDTO.getModel()).ifPresent(m -> {
-            var exception = new DataAlreadyExistException(format("Model with name(%s) already exists", m.getModel()));
-            log.error("Exception occurred during request processing: ", exception);
-            throw exception;
-        });
+        if (optional.isPresent()) {
+            return null;
 
+        }
         return mapper.modelToModelBasicDTO(modelDAO.save(mapper.modelBasicDTOToModel(modelBasicDTO)));
     }
 
@@ -70,27 +68,21 @@ public class ModelServiceImp implements ModelService {
     public ModelBasicDTO updateModel(Long id, ModelBasicDTO modelBasicDTO) {
         log.info("UpdateModel started with id: {}, model: {}", id, modelBasicDTO);
 
-        Model model = modelDAO.findById(id).orElseThrow(() -> {
-            var exception = new DataNotFoundException(format("Model with id(%d) wasn't found", id));
-            log.error("Exception occurred during request processing: ", exception);
-            return exception;
-        });
+        return modelDAO.findById(id).map(m -> {
+            m.setModel(modelBasicDTO.getModel());
+            return mapper.modelToModelBasicDTO(modelDAO.save(m));
+        }).orElse(null);
 
-        model.setModel(modelBasicDTO.getModel());
-
-        return mapper.modelToModelBasicDTO(modelDAO.save(model));
     }
 
     @Override
-    public void deleteModelByName(String name) {
+    public boolean deleteModelByName(String name) {
         log.info("DeleteModelByName started with name: {}", name);
 
-        Model model = modelDAO.findModelWithCarsByName(name).orElseThrow(() -> {
-            var exception = new DataNotFoundException(format("Model with name(%s) wasn't found", name));
-            log.error("Exception occurred during request processing: ", exception);
-            return exception;
-        });
-
-        modelDAO.delete(model);
+        return modelDAO.findModelWithCarsByName(name)
+                .map(m -> {
+                    modelDAO.delete(m);
+                    return true;
+                }).orElse(false);
     }
 }

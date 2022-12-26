@@ -1,8 +1,6 @@
 package com.foxminded.car_rest_service.services;
 
 import com.foxminded.car_rest_service.entities.Car;
-import com.foxminded.car_rest_service.exceptions.custom.DataAlreadyExistException;
-import com.foxminded.car_rest_service.exceptions.custom.DataNotFoundException;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarWithoutCategoriesDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.category.CategoryBasicDTO;
@@ -22,8 +20,9 @@ import java.util.stream.Collectors;
 
 import static org.junit.jupiter.api.Assertions.assertAll;
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class CarServiceTest extends TestcontainersConfig {
 
@@ -100,35 +99,73 @@ class CarServiceTest extends TestcontainersConfig {
     }
 
     @Test
-    void createCar_shouldThrowDataAlreadyExistException_whenCarWithInputParametersAlreadyExists() {
-        assertThrows(DataAlreadyExistException.class,
-                () -> carService.createCar("Acura", "Touareg 2", 2017));
+    void createCar_shouldReturnCreatedCarWithoutCategoriesDTO_whenInputManufacturersAndModelNotExist() {
+        CarWithoutCategoriesDTO expected = getCarWithoutCategoriesDTOWhenAddNewManufacturerAndModel();
+
+        CarWithoutCategoriesDTO actual = carService.createCar("new", "new", 2017);
+
+        assertAll(
+                () -> assertEquals(expected, actual),
+                () -> assertEquals(expected.getManufacturer(), actual.getManufacturer()),
+                () -> assertEquals(expected.getManufacturer().getManufacturer(), actual.getManufacturer().getManufacturer()),
+                () -> assertEquals(expected.getModel().getModel(), actual.getModel().getModel()),
+                () -> assertEquals(expected.getModel(), actual.getModel()));
+
+
     }
 
     @Test
-    void createCar_shouldThrowDataNotFoundException_whenInputManufacturerNameWasNOtFound() {
-        assertThrows(DataNotFoundException.class,
-                () -> carService.createCar("INPUT", "Touareg 2", 2017));
-    }
-
-    @Test
-    void createCar_shouldThrowDataNotFoundException_whenInputModelNameWasNOtFound() {
-        assertThrows(DataNotFoundException.class,
-                () -> carService.createCar("Acura", "INPUT", 2017));
-    }
-
-    @Test
-    void deleteCarById_shouldDeleteCar_whenCarWithInputIdExists() {
-        carService.deleteCarById(1L);
-
-        Car actual = entityManager.find(Car.class, 1L);
-
+    void createCar_shouldReturnNull_whenCarWithInputParametersAlreadyExists() {
+        CarWithoutCategoriesDTO actual = carService.createCar("Acura", "Touareg 2", 2017);
         assertNull(actual);
     }
 
     @Test
-    void deleteCarById_shouldThrowDataNotFoundException_whenCarWithInputIdNotExist() {
-        assertThrows(DataNotFoundException.class, () -> carService.deleteCarById(10L));
+    void updateCar_shouldReturnUpdatedCar_whenInputCarExists() {
+        CarWithoutCategoriesDTO expected = getCarWithoutCategoriesDTOForUpdate();
+
+        CarWithoutCategoriesDTO actual = carService.updateCar(expected);
+
+        assertAll(
+                () -> assertEquals(expected, actual),
+                () -> assertEquals(expected.getModel(), actual.getModel()),
+                () -> assertEquals(expected.getManufacturer(), actual.getManufacturer())
+        );
+    }
+
+    @Test
+    void updateCar_shouldReturnUpdatedCarWithNewModelAndManufacturer_whenInputCarExistsAndInputManufacturerAndModelNotExist() {
+        CarWithoutCategoriesDTO expected = getCarWithoutCategoriesDTOForUpdateWithNewModelAndManufacturer();
+
+        CarWithoutCategoriesDTO actual = carService.updateCar(expected);
+
+        assertAll(
+                () -> assertEquals(expected, actual),
+                () -> assertEquals(expected.getModel().getModel(), actual.getModel().getModel()),
+                () -> assertEquals(expected.getManufacturer().getManufacturer(), actual.getManufacturer().getManufacturer())
+        );
+    }
+
+    @Test
+    void updateCar_shouldReturnNull_whenInputCarNotExists() {
+        CarWithoutCategoriesDTO actual = carService.updateCar(getCarWithoutCategoriesDTO());
+        assertNull(actual);
+    }
+
+    @Test
+    void deleteCarById_shouldDeleteCarAndReturnTrue_whenCarWithInputIdExists() {
+        boolean isDeleted = carService.deleteCarById(1L);
+
+        Car actual = entityManager.find(Car.class, 1L);
+
+        assertNull(actual);
+        assertTrue(isDeleted);
+    }
+
+    @Test
+    void deleteCarById_shouldReturnFalse_whenCarWithInputIdNotExist() {
+        boolean isDeleted = carService.deleteCarById(10L);
+        assertFalse(isDeleted);
     }
 
     @Test
@@ -143,17 +180,20 @@ class CarServiceTest extends TestcontainersConfig {
     }
 
     @Test
-    void addCarToCategory_shouldThrowDataAlreadyExistException_whenCarAlreadyHasInputCategory() {
-        assertThrows(DataAlreadyExistException.class, () -> carService.addCarToCategory(1L, "Convertible"));
-    }
-    @Test
-    void addCarToCategory_shouldThrowDataNotFoundException_whenCarWithInputIdNotFound() {
-        assertThrows(DataNotFoundException.class, () -> carService.addCarToCategory(10L, "Wagon"));
+    void addCarToCategory_shouldAddCategoryAndReturnCarDTOWithCategories_whenCategoryWithInputNameNotExist() {
+        CarDTO expected = getCarDtOWithCategoriesAfterAddCategoryWhenCategoryNotExist();
+        CarDTO actual = carService.addCarToCategory(1L, "new");
+
+        assertAll(
+                () -> assertEquals(expected, actual),
+                () -> assertEquals(expected.getCarCategories(), actual.getCarCategories())
+        );
     }
 
     @Test
-    void addCarToCategory_shouldThrowDataNotFoundException_whenCategoryWithInputNameNotFound() {
-        assertThrows(DataNotFoundException.class, () -> carService.addCarToCategory(1L, "INPUT"));
+    void addCarToCategory_shouldReturnNull_whenCarWithInputIdNotFound() {
+        CarDTO actual = carService.addCarToCategory(10L, "Wagon");
+        assertNull(actual);
     }
 
     @Test
@@ -169,13 +209,21 @@ class CarServiceTest extends TestcontainersConfig {
     }
 
     @Test
-    void removeCarFromCategory_shouldThrowDataNotFoundException_whenCarWithInputIdNotFound() {
-        assertThrows(DataNotFoundException.class, () -> carService.removeCarFromCategory(10L, "Convertible"));
+    void removeCarFromCategory_shouldReturnCarDto_whenCategoryWithInputNameNotExist() {
+        CarDTO expected = getCarDtOWithCategories();
+
+        CarDTO actual = carService.removeCarFromCategory(1L, "new");
+
+        assertAll(
+                () -> assertEquals(expected, actual),
+                () -> assertEquals(expected.getCarCategories(), actual.getCarCategories())
+        );
     }
 
     @Test
-    void removeCarFromCategory_shouldThrowDataNotFoundException_whenCategoryWithInputNameNotFound() {
-        assertThrows(DataNotFoundException.class, () -> carService.removeCarFromCategory(1L, "INPUT"));
+    void removeCarFromCategory_shouldReturnNull_whenCarWithInputIdNotFound() {
+        CarDTO actual = carService.removeCarFromCategory(10L, "Convertible");
+        assertNull(actual);
     }
 
     private List<CarDTO> getCars() {
@@ -224,7 +272,17 @@ class CarServiceTest extends TestcontainersConfig {
 
         carWithoutCategoriesDTO.setId(8L);
         carWithoutCategoriesDTO.setManufacturer(new ManufacturerBasicDTO(1L, "Acura", 2017));
-        carWithoutCategoriesDTO.setModel(new ModelBasicDTO(2L,"Regal"));
+        carWithoutCategoriesDTO.setModel(new ModelBasicDTO(2L, "Regal"));
+
+        return carWithoutCategoriesDTO;
+    }
+
+    private CarWithoutCategoriesDTO getCarWithoutCategoriesDTOWhenAddNewManufacturerAndModel() {
+        CarWithoutCategoriesDTO carWithoutCategoriesDTO = new CarWithoutCategoriesDTO();
+
+        carWithoutCategoriesDTO.setId(8L);
+        carWithoutCategoriesDTO.setManufacturer(new ManufacturerBasicDTO(7L, "new", 2017));
+        carWithoutCategoriesDTO.setModel(new ModelBasicDTO(4L, "new"));
 
         return carWithoutCategoriesDTO;
     }
@@ -242,6 +300,31 @@ class CarServiceTest extends TestcontainersConfig {
         return carDTO;
     }
 
+    private CarDTO getCarDtOWithCategoriesAfterAddCategoryWhenCategoryNotExist() {
+        CarDTO carDTO = new CarDTO();
+        carDTO.setId(1L);
+
+        Set<CategoryBasicDTO> categories = new HashSet<>();
+        categories.add(new CategoryBasicDTO(1L, "SUV1992"));
+        categories.add(new CategoryBasicDTO(2L, "Convertible"));
+        categories.add(new CategoryBasicDTO(4L, "new"));
+        carDTO.setCarCategories(categories);
+
+        return carDTO;
+    }
+
+    private CarDTO getCarDtOWithCategories() {
+        CarDTO carDTO = new CarDTO();
+        carDTO.setId(1L);
+
+        Set<CategoryBasicDTO> categories = new HashSet<>();
+        categories.add(new CategoryBasicDTO(1L, "SUV1992"));
+        categories.add(new CategoryBasicDTO(2L, "Convertible"));
+        carDTO.setCarCategories(categories);
+
+        return carDTO;
+    }
+
     private CarDTO getCarDtOWithCategoriesAfterDeleteCategory() {
         CarDTO carDTO = new CarDTO();
         carDTO.setId(1L);
@@ -251,5 +334,25 @@ class CarServiceTest extends TestcontainersConfig {
         carDTO.setCarCategories(categories);
 
         return carDTO;
+    }
+
+    private CarWithoutCategoriesDTO getCarWithoutCategoriesDTOForUpdateWithNewModelAndManufacturer() {
+        CarWithoutCategoriesDTO carWithoutCategoriesDTO = new CarWithoutCategoriesDTO();
+
+        carWithoutCategoriesDTO.setId(1L);
+        carWithoutCategoriesDTO.setManufacturer(new ManufacturerBasicDTO(7L, "NEW", 2017));
+        carWithoutCategoriesDTO.setModel(new ModelBasicDTO(4L, "NEW"));
+
+        return carWithoutCategoriesDTO;
+    }
+
+    private CarWithoutCategoriesDTO getCarWithoutCategoriesDTOForUpdate() {
+        CarWithoutCategoriesDTO carWithoutCategoriesDTO = new CarWithoutCategoriesDTO();
+
+        carWithoutCategoriesDTO.setId(1L);
+        carWithoutCategoriesDTO.setManufacturer(new ManufacturerBasicDTO(1L, "Acura", 2017));
+        carWithoutCategoriesDTO.setModel(new ModelBasicDTO(2L, "Regal"));
+
+        return carWithoutCategoriesDTO;
     }
 }

@@ -11,7 +11,7 @@ public interface CarService {
 
     CarWithoutCategoriesDTO createCar(String manufacturer, String model, Integer year);
 
-    void deleteCarById(Long id);
+    boolean deleteCarById(Long id);
 
     CarDTO addCarToCategory(Long id, String name);
 
@@ -20,4 +20,6 @@ public interface CarService {
     List<CarDTO> getAllCarsByManufacturer(String manufacturer, Pageable pageable);
 
     List<CarDTO> getAllCarsByManufacturerAndMinYear(String manufacturer, Integer year, Pageable pageable);
+
+    CarWithoutCategoriesDTO updateCar(CarWithoutCategoriesDTO carWithoutCategoriesDTO);
 }

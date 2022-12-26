@@ -1,8 +1,6 @@
 package com.foxminded.car_rest_service.services;
 
 import com.foxminded.car_rest_service.entities.Manufacturer;
-import com.foxminded.car_rest_service.exceptions.custom.DataAlreadyExistException;
-import com.foxminded.car_rest_service.exceptions.custom.DataNotFoundException;
 import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerDTO;
 import org.junit.jupiter.api.Test;
@@ -15,8 +13,8 @@ import javax.persistence.PersistenceContext;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertNull;
-import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 class ManufacturerServiceTest extends TestcontainersConfig {
@@ -59,9 +57,9 @@ class ManufacturerServiceTest extends TestcontainersConfig {
     }
 
     @Test
-    void createManufacturer_shouldThrowDataAlreadyExistException_whenInputManufacturerExists() {
-        assertThrows(DataAlreadyExistException.class,
-                () -> manufacturerService.createManufacturer(getManufacturerBasicDTO(null, "Acura", 2017)));
+    void createManufacturer_shouldReturnNull_whenInputManufacturerExists() {
+        ManufacturerBasicDTO actual = manufacturerService.createManufacturer(getManufacturerBasicDTO(null, "Acura", 2017));
+        assertNull(actual);
     }
 
     @Test
@@ -74,43 +72,47 @@ class ManufacturerServiceTest extends TestcontainersConfig {
     }
 
     @Test
-    void updateManufacturer_shouldThrowDataNotFoundException_whenManufacturerNotFound() {
+    void updateManufacturer_shouldReturnNull_whenManufacturerNotFound() {
         ManufacturerBasicDTO input = getManufacturerBasicDTO(20L, "NEW", 2022);
-
-        assertThrows(DataNotFoundException.class, () -> manufacturerService.updateManufacturer(20L, input));
-    }
-
-    @Test
-    void deleteAllManufacturerByName_shouldDeleteAllManufacturersByName_whenManufacturersExist() {
-        String inputName = "Acura";
-        manufacturerService.deleteAllManufacturerByName(inputName);
-
-        List<Manufacturer> actual = entityManager.createQuery(
-                     "SELECT m " +
-                        "FROM Manufacturer m " +
-                        "WHERE m.manufacturer = :name ", Manufacturer.class).setParameter("name", inputName)
-                                                        .getResultList();
-
-        assertTrue(actual.isEmpty());
-    }
-
-    @Test
-    void deleteAllManufacturerByName_shouldThrowDataNotFoundException_whenManufacturersNotExist() {
-        assertThrows(DataNotFoundException.class, () -> manufacturerService.deleteAllManufacturerByName("INPUT_NAME"));
-    }
-
-    @Test
-    void deleteManufacturerByNameAndYear_shouldDeleteManufacturer_whenManufactureExists() {
-        manufacturerService.deleteManufacturerByNameAndYear("Acura", 2017);
-
-        Manufacturer actual = entityManager.find(Manufacturer.class, 1L);
-
+        ManufacturerBasicDTO actual = manufacturerService.updateManufacturer(20L, input);
         assertNull(actual);
     }
 
     @Test
-    void deleteManufacturerByNameAndYear_shouldThrowDataNotFoundException_whenManufactureNotExist() {
-        assertThrows(DataNotFoundException.class, () -> manufacturerService.deleteManufacturerByNameAndYear("INPUT", 1500));
+    void deleteAllManufacturerByName_shouldDeleteAllManufacturersByNameAndReturnTrue_whenManufacturersExist() {
+        String inputName = "Acura";
+        boolean isDeleted = manufacturerService.deleteAllManufacturerByName(inputName);
+
+        List<Manufacturer> actual = entityManager.createQuery(
+                        "SELECT m " +
+                                "FROM Manufacturer m " +
+                                "WHERE m.manufacturer = :name ", Manufacturer.class).setParameter("name", inputName)
+                .getResultList();
+
+        assertTrue(actual.isEmpty());
+        assertTrue(isDeleted);
+    }
+
+    @Test
+    void deleteAllManufacturerByName_shouldReturnFalse_whenManufacturersNotExist() {
+        boolean isDeleted = manufacturerService.deleteAllManufacturerByName("INPUT_NAME");
+        assertFalse(isDeleted);
+    }
+
+    @Test
+    void deleteManufacturerByNameAndYear_shouldDeleteManufacturerAndReturnTrue_whenManufactureExists() {
+        boolean isDeleted = manufacturerService.deleteManufacturerByNameAndYear("Acura", 2017);
+
+        Manufacturer actual = entityManager.find(Manufacturer.class, 1L);
+
+        assertNull(actual);
+        assertTrue(isDeleted);
+    }
+
+    @Test
+    void deleteManufacturerByNameAndYear_shouldReturnFalse_whenManufactureNotExist() {
+        boolean isDeleted = manufacturerService.deleteManufacturerByNameAndYear("INPUT", 1500);
+        assertFalse(isDeleted);
     }
 
     private List<String> getAllNamesOfManufacturers() {

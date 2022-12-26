@@ -15,5 +15,5 @@ public interface CategoryService {
 
     CategoryBasicDTO updateCategory(Long id, CategoryBasicDTO categoryInput);
 
-    void deleteCategoryByName(String name);
+    boolean deleteCategoryByName(String name);
 }

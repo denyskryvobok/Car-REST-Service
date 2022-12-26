@@ -1,6 +1,6 @@
 package com.foxminded.car_rest_service.integration;
 
-import com.foxminded.car_rest_service.exceptions.response.ErrorResponse;
+import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.exceptions.response.ValidationErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.Violation;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarWithoutCategoriesDTO;
@@ -35,7 +35,10 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(categories);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(categories);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -51,7 +54,10 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(category);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(category);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -69,7 +75,10 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(category);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(category);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -78,16 +87,17 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
 
     @Test
     @WithUserDetails("jamessmith")
-    void createCategory_shouldReturnStatus422_whenDataAlreadyExistExceptionThrown() throws Exception {
+    void createCategory_shouldReturnStatus422_whenCategoryAlreadyExists() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/categories")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(getBasicCategory(null, "Convertible"))))
                 .andExpect(status().isUnprocessableEntity())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(422, "Category with name(Category(id=2, category=Convertible)) already exist");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Category with name(Convertible) already exist");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -124,7 +134,9 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(dto);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(dto);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -142,9 +154,11 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Category with id(8) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Category with id(8) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
+
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -167,9 +181,10 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Category with name(name) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Category with name(name) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 

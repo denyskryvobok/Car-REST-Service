@@ -2,9 +2,7 @@ package com.foxminded.car_rest_service.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.foxminded.car_rest_service.dao.AppUserDAO;
-import com.foxminded.car_rest_service.exceptions.custom.DataAlreadyExistException;
-import com.foxminded.car_rest_service.exceptions.custom.DataNotFoundException;
-import com.foxminded.car_rest_service.exceptions.response.ErrorResponse;
+import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.exceptions.response.ValidationErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.Violation;
 import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerBasicDTO;
@@ -25,10 +23,14 @@ import org.springframework.test.web.servlet.MvcResult;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.ArgumentMatchers.*;
-import static org.mockito.Mockito.doThrow;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.when;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
 @Import(SecurityConfig.class)
@@ -57,7 +59,10 @@ class ManufacturerControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(manufacturers);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(manufacturers);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -77,7 +82,10 @@ class ManufacturerControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(manufacturerDTOS);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(manufacturerDTOS);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -98,7 +106,10 @@ class ManufacturerControllerTest {
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(manufacturer);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(manufacturer);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -107,19 +118,17 @@ class ManufacturerControllerTest {
 
     @Test
     @WithMockUser
-    void createManufacturer_shouldReturnStatus422_whenDataAlreadyExistExceptionThrown() throws Exception {
-        when(manufacturerService.createManufacturer(any(ManufacturerBasicDTO.class)))
-                .thenThrow(new DataAlreadyExistException("Manufacturer with name(new) already exists"));
-
+    void createManufacturer_shouldReturnStatus422_whenManufacturerAlreadyExists() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/manufacturers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(getManufacturerBasicDTO(null, "new", 2033))))
                 .andExpect(status().isUnprocessableEntity())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(422, "Manufacturer with name(new) already exists");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Manufacturer with name(new) and year(2033) already exist");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -158,7 +167,10 @@ class ManufacturerControllerTest {
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(dto);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(dto);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -170,18 +182,16 @@ class ManufacturerControllerTest {
     void updateManufacturer_shouldReturnStatus404_whenManufacturerWasNotFound() throws Exception {
         ManufacturerBasicDTO dto = getManufacturerBasicDTO(8L, "new", 200);
 
-        when(manufacturerService.updateManufacturer(anyLong(), any(ManufacturerBasicDTO.class)))
-                .thenThrow(new DataNotFoundException("Manufacturer with id(8) wasn't found"));
-
         MvcResult mvcResult = mockMvc.perform(put("/api/v1/manufacturers/update/by/{id}", 8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Manufacturer with id(8) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Manufacturer with id(8) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -191,6 +201,8 @@ class ManufacturerControllerTest {
     @Test
     @WithMockUser
     void deleteAllManufacturerByName_shouldReturnStatus204_whenManufacturerWasDeleted() throws Exception {
+        when(manufacturerService.deleteAllManufacturerByName(anyString())).thenReturn(true);
+
         mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
@@ -217,17 +229,17 @@ class ManufacturerControllerTest {
     @Test
     @WithMockUser
     void deleteAllManufacturerByName_shouldReturnStatus404_whenManufacturersWasNotFound() throws Exception {
-        doThrow(new DataNotFoundException("Manufacturer with name(name) wasn't found"))
-                .when(manufacturerService).deleteAllManufacturerByName("name");
+        when(manufacturerService.deleteAllManufacturerByName(anyString())).thenReturn(false);
 
         MvcResult mvcResult = mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Manufacturer with name(name) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Manufacturers with name(name) weren't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -237,6 +249,8 @@ class ManufacturerControllerTest {
     @Test
     @WithMockUser
     void deleteManufacturerByNameAndYear_shouldReturnStatus204_whenManufacturerWasDeleted() throws Exception {
+        when(manufacturerService.deleteManufacturerByNameAndYear(anyString(), anyInt())).thenReturn(true);
+
         mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}/year/{year}", "name", 2000)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
@@ -263,8 +277,7 @@ class ManufacturerControllerTest {
     @Test
     @WithMockUser
     void deleteManufacturerByNameAndYear_shouldReturnStatus404_whenManufacturersWasNotFound() throws Exception {
-        doThrow(new DataNotFoundException("Manufacturer with name(name) and year(2000) wasn't found"))
-                .when(manufacturerService).deleteManufacturerByNameAndYear("name", 2000);
+        when(manufacturerService.deleteManufacturerByNameAndYear(anyString(), anyInt())).thenReturn(false);
 
         MvcResult mvcResult =
                 mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}/year/{year}", "name", 2000)
@@ -272,9 +285,10 @@ class ManufacturerControllerTest {
                         .andExpect(status().isNotFound())
                         .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Manufacturer with name(name) and year(2000) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Manufacturers with name(name) and year(2000) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 

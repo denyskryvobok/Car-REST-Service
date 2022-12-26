@@ -1,6 +1,6 @@
 package com.foxminded.car_rest_service.integration;
 
-import com.foxminded.car_rest_service.exceptions.response.ErrorResponse;
+import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.exceptions.response.ValidationErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.Violation;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarDTO;
@@ -36,7 +36,10 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(cars);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(cars);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -53,7 +56,10 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(cars);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(cars);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -71,7 +77,10 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(cars);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(cars);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -90,7 +99,11 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(car);
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(car);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -99,16 +112,41 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
 
     @Test
     @WithUserDetails("jamessmith")
-    void createCar_shouldReturnStatus422_whenDataAlreadyExistExceptionThrown() throws Exception {
+    void createCar_shouldCreateCarAndReturnCarWithoutCategoriesDTO_whenInputManufacturerAndModelNotExist() throws Exception {
+        CarWithoutCategoriesDTO car = getCarWithoutCategoriesDTOWhenInputManufacturerAndModelWasNotExist();
+
+        MvcResult mvcResult = mockMvc.perform(
+                        post("/api/v1/cars/manufacturer/{manufacturer}/model/{model}/year/{year}",
+                                "new", "new", 2017)
+                                .contentType(MediaType.APPLICATION_JSON))
+                .andExpect(status().isCreated())
+                .andReturn();
+
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(car);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    @WithUserDetails("jamessmith")
+    void createCar_shouldReturnStatus422_whenCarAlreadyExists() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/cars/manufacturer/{manufacturer}/model/{model}/year/{year}",
                         "Acura", "Touareg 2", 2017)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isUnprocessableEntity())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(422, "Car with manufacturer:Acura, model:Touareg 2, year:2017, already exist");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Car with manufacturer:Acura, model:Touareg 2, year:2017, already exist");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
+
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -136,8 +174,68 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
 
     @Test
     @WithUserDetails("jamessmith")
+    void updateCar_shouldReturnStatus200_whenInputCarExist() throws Exception {
+        CarWithoutCategoriesDTO dto = getCarWithoutCategoriesDTOForUpdate(1L);
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isOk())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(dto);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    @WithUserDetails("jamessmith")
+    void updateCar_shouldReturnStatus404_whenCarIsNotFound() throws Exception {
+        CarWithoutCategoriesDTO dto = getCarWithoutCategoriesDTOForUpdate(10L);
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isNotFound())
+                .andReturn();
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Car with id(10) not found");
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    @WithUserDetails("jamessmith")
+    void updateCar_shouldReturnStatus422_whenManufacturerIsNull() throws Exception {
+        CarWithoutCategoriesDTO dto = getCarWithoutCategoriesDTOWithoutManufacturer();
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars")
+                        .contentType(MediaType.APPLICATION_JSON)
+                        .content(objectMapper.writeValueAsString(dto)))
+                .andExpect(status().isUnprocessableEntity())
+                .andReturn();
+
+        ValidationErrorResponse error = new ValidationErrorResponse();
+        error.getViolations().add(new Violation("manufacturer", "must not be null"));
+
+        String expected = objectMapper.writeValueAsString(error);
+
+        String actual = mvcResult.getResponse().getContentAsString();
+
+        assertEquals(expected, actual);
+    }
+
+    @Test
+    @WithUserDetails("jamessmith")
     void deleteById_shouldReturnStatus204_whenCarWasDeleted() throws Exception {
-        mockMvc.perform(delete("/api/v1/cars//delete/id/{id}", 1)
+        mockMvc.perform(delete("/api/v1/cars/delete/id/{id}", 1)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
@@ -150,9 +248,10 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Car with id(10) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Car with id(10) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -169,7 +268,11 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(car);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(car);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
+
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -178,15 +281,17 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
 
     @Test
     @WithUserDetails("jamessmith")
-    void addCarToCategory_shouldReturnStatusCode404_whenInputCategoryNotExist() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/add/{id}/category/{name}", 1L, "name")
+    void addCarToCategory_shouldReturnStatusCode404_whenCarByInputIdNotExist() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/add/{id}/category/{name}", 10L, "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Category with name (name) was found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Car with input id(10) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
+
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -221,7 +326,9 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(car);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(car);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -230,15 +337,17 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
 
     @Test
     @WithUserDetails("jamessmith")
-    void removeCarFromCategory_shouldReturnStatusCode404_whenInputCategoryNotExist() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/remove/{id}/category/{name}", 1L, "name")
+    void removeCarFromCategory_shouldReturnStatusCode404_whenCarByInputIdNotExist() throws Exception {
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/remove/{id}/category/{name}", 10L, "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Category with name (name) was found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Car with input id(10) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
+
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -321,6 +430,16 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
         return carWithoutCategoriesDTO;
     }
 
+    private CarWithoutCategoriesDTO getCarWithoutCategoriesDTOWhenInputManufacturerAndModelWasNotExist() {
+        CarWithoutCategoriesDTO carWithoutCategoriesDTO = new CarWithoutCategoriesDTO();
+
+        carWithoutCategoriesDTO.setId(8L);
+        carWithoutCategoriesDTO.setManufacturer(new ManufacturerBasicDTO(7L, "new", 2017));
+        carWithoutCategoriesDTO.setModel(new ModelBasicDTO(4L, "new"));
+
+        return carWithoutCategoriesDTO;
+    }
+
     private CarDTO getCarDtOWithCategoriesAfterAddCategory() {
         CarDTO carDTO = new CarDTO();
         carDTO.setModel(new ModelBasicDTO(1L, "Touareg 2"));
@@ -344,5 +463,25 @@ public class CarControllerIntegrationTest extends IntegrationTestcontainersConfi
         carDTO.setId(1L);
 
         return carDTO;
+    }
+
+    private CarWithoutCategoriesDTO getCarWithoutCategoriesDTOForUpdate(Long id) {
+        CarWithoutCategoriesDTO carWithoutCategoriesDTO = new CarWithoutCategoriesDTO();
+
+        carWithoutCategoriesDTO.setId(id);
+        carWithoutCategoriesDTO.setManufacturer(new ManufacturerBasicDTO(1L, "Acura", 2017));
+        carWithoutCategoriesDTO.setModel(new ModelBasicDTO(2L, "Regal"));
+
+        return carWithoutCategoriesDTO;
+    }
+
+    private CarWithoutCategoriesDTO getCarWithoutCategoriesDTOWithoutManufacturer() {
+        CarWithoutCategoriesDTO carWithoutCategoriesDTO = new CarWithoutCategoriesDTO();
+
+        carWithoutCategoriesDTO.setId(1L);
+        carWithoutCategoriesDTO.setManufacturer(null);
+        carWithoutCategoriesDTO.setModel(new ModelBasicDTO(4L, "NEW"));
+
+        return carWithoutCategoriesDTO;
     }
 }

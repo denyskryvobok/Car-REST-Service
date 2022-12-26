@@ -1,7 +1,7 @@
 package com.foxminded.car_rest_service.controllers;
 
+import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerBasicDTO;
-import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerDTO;
 import com.foxminded.car_rest_service.services.ManufacturerService;
 import com.foxminded.car_rest_service.utils.Mappings;
 import lombok.extern.slf4j.Slf4j;
@@ -21,7 +21,8 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
-import java.util.List;
+
+import static java.lang.String.format;
 
 @Slf4j
 @Validated
@@ -33,33 +34,64 @@ public class ManufacturerController {
     private ManufacturerService manufacturerService;
 
     @GetMapping
-    public ResponseEntity<List<String>> getAllUniqueManufacturers(Pageable pageable) {
+    public ResponseEntity<ResultModel> getAllUniqueManufacturers(Pageable pageable) {
         log.info("GetAllUniqueManufacturers started");
 
-        return new ResponseEntity<>(manufacturerService.getAllUniqueManufacturers(pageable), HttpStatus.OK);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(manufacturerService.getAllUniqueManufacturers(pageable));
+
+        return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
     @GetMapping(Mappings.GET_MANUFACTURER_BY_NAME)
-    public ResponseEntity<List<ManufacturerDTO>> getAllManufacturersByName(@NotBlank @PathVariable("name") String name,
-                                                                           Pageable pageable) {
+    public ResponseEntity<ResultModel> getAllManufacturersByName(@NotBlank @PathVariable("name") String name,
+                                                                 Pageable pageable) {
         log.info("GetAllManufacturersByName started with name: {}", name);
 
-        return new ResponseEntity<>(manufacturerService.getAllManufacturersByName(name, pageable), HttpStatus.OK);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(manufacturerService.getAllManufacturersByName(name, pageable));
+
+        return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
     @PostMapping
-    public ResponseEntity<ManufacturerBasicDTO> createManufacturer(@Valid @RequestBody ManufacturerBasicDTO manufacturerDTO) {
+    public ResponseEntity<ResultModel> createManufacturer(@Valid @RequestBody ManufacturerBasicDTO manufacturerDTO) {
         log.info("CreateManufacturer started with input: {}", manufacturerDTO);
 
-        return new ResponseEntity<>(manufacturerService.createManufacturer(manufacturerDTO), HttpStatus.CREATED);
+        ResultModel resultModel = new ResultModel();
+
+        ManufacturerBasicDTO manufacturer = manufacturerService.createManufacturer(manufacturerDTO);
+
+        if (manufacturer == null) {
+            resultModel.setMassage(format("Manufacturer with name(%s) and year(%d) already exist",
+                    manufacturerDTO.getManufacturer(), manufacturerDTO.getYear()));
+
+            return new ResponseEntity<>(resultModel, HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+
+        resultModel.setData(manufacturer);
+
+        return new ResponseEntity<>(resultModel, HttpStatus.CREATED);
     }
 
     @PutMapping(Mappings.UPDATE_MANUFACTURER_BY_ID)
-    public ResponseEntity<ManufacturerBasicDTO> updateManufacturer(@PathVariable("id") Long id,
-                                                                   @Valid @RequestBody ManufacturerBasicDTO manufacturerBasicDTO) {
+    public ResponseEntity<ResultModel> updateManufacturer(@PathVariable("id") Long id,
+                                                          @Valid @RequestBody ManufacturerBasicDTO manufacturerBasicDTO) {
         log.info("UpdateManufacturer started with id: {}, manufacturerBasicDTO: {}", id, manufacturerBasicDTO);
 
-        return new ResponseEntity<>(manufacturerService.updateManufacturer(id, manufacturerBasicDTO), HttpStatus.OK);
+        ResultModel resultModel = new ResultModel();
+
+        ManufacturerBasicDTO manufacturer = manufacturerService.updateManufacturer(id, manufacturerBasicDTO);
+
+        if (manufacturer == null) {
+            resultModel.setMassage(format("Manufacturer with id(%d) wasn't found", id));
+
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
+
+        resultModel.setData(manufacturer);
+
+        return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
     @DeleteMapping(Mappings.DELETE_MANUFACTURER_BY_NAME_AND_YEAR)
@@ -67,7 +99,13 @@ public class ManufacturerController {
                                                              @PathVariable(name = "year") Integer year) {
         log.info("DeleteManufacturerByNameAndYear started with name: {}, year: {}", name, year);
 
-        manufacturerService.deleteManufacturerByNameAndYear(name, year);
+        boolean isDeleted = manufacturerService.deleteManufacturerByNameAndYear(name, year);
+
+        if (!isDeleted) {
+            ResultModel resultModel = new ResultModel();
+            resultModel.setMassage(format("Manufacturers with name(%s) and year(%d) wasn't found", name, year));
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
@@ -76,7 +114,13 @@ public class ManufacturerController {
     public ResponseEntity<?> deleteAllManufacturerByName(@NotBlank @PathVariable(name = "name") String name) {
         log.info("DeleteManufacturerByName started with name: {}", name);
 
-        manufacturerService.deleteAllManufacturerByName(name);
+        boolean isDeleted = manufacturerService.deleteAllManufacturerByName(name);
+
+        if (!isDeleted) {
+            ResultModel resultModel = new ResultModel();
+            resultModel.setMassage(format("Manufacturers with name(%s) weren't found", name));
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }

@@ -1,6 +1,6 @@
 package com.foxminded.car_rest_service.integration;
 
-import com.foxminded.car_rest_service.exceptions.response.ErrorResponse;
+import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.exceptions.response.ValidationErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.Violation;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarWithoutManufactureDTO;
@@ -35,7 +35,10 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(manufacturers);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(manufacturers);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -52,7 +55,10 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(manufacturerDTOS);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(manufacturerDTOS);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -70,7 +76,10 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
                 .andExpect(status().isCreated())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(manufacturer);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(manufacturer);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -79,16 +88,17 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
 
     @Test
     @WithUserDetails("jamessmith")
-    void createManufacturer_shouldReturnStatus422_whenDataAlreadyExistExceptionThrown() throws Exception {
+    void createManufacturer_shouldReturnStatus422_whenManufacturerAlreadyExist() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/manufacturers")
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(getManufacturerBasicDTO(null, "Acura", 2017))))
                 .andExpect(status().isUnprocessableEntity())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(422, "Manufacturer with name(Acura) and year(2017) already exist");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Manufacturer with name(Acura) and year(2017) already exist");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -125,7 +135,10 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
                 .andExpect(status().isOk())
                 .andReturn();
 
-        String expected = objectMapper.writeValueAsString(dto);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(dto);
+
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -143,9 +156,10 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Manufacturer with id(8) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Manufacturer with id(8) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -186,9 +200,10 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
                 .andExpect(status().isNotFound())
                 .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Manufacturers with name(name) weren't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Manufacturers with name(name) weren't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 
@@ -230,9 +245,10 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
                         .andExpect(status().isNotFound())
                         .andReturn();
 
-        ErrorResponse errorResponse = new ErrorResponse(404, "Manufacturers with name(name) and year(2000) wasn't found");
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage("Manufacturers with name(name) and year(2000) wasn't found");
 
-        String expected = objectMapper.writeValueAsString(errorResponse);
+        String expected = objectMapper.writeValueAsString(resultModel);
 
         String actual = mvcResult.getResponse().getContentAsString();
 

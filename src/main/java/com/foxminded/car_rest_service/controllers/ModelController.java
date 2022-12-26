@@ -1,7 +1,7 @@
 package com.foxminded.car_rest_service.controllers;
 
+import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelBasicDTO;
-import com.foxminded.car_rest_service.mapstruct.dto.model.ModelDTO;
 import com.foxminded.car_rest_service.services.ModelService;
 import com.foxminded.car_rest_service.utils.Mappings;
 import lombok.extern.slf4j.Slf4j;
@@ -10,18 +10,12 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
-import java.util.List;
+
+import static java.lang.String.format;
 
 
 @Slf4j
@@ -34,39 +28,72 @@ public class ModelController {
     private ModelService modelService;
 
     @GetMapping
-    public ResponseEntity<List<ModelBasicDTO>> getAllModels(Pageable pageable) {
+    public ResponseEntity<ResultModel> getAllModels(Pageable pageable) {
         log.info("GetAllModels started");
 
-        return new ResponseEntity<>(modelService.getAllModels(pageable), HttpStatus.OK);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(modelService.getAllModels(pageable));
+
+        return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
     @GetMapping(Mappings.GET_MODEL_BY_NAME)
-    public ResponseEntity<ModelDTO> getModelWithCarsByName(@NotBlank @PathVariable(name = "name") String name) {
+    public ResponseEntity<ResultModel> getModelWithCarsByName(@NotBlank @PathVariable(name = "name") String name) {
         log.info("GetModelWithCarsByName started with name: {}", name);
 
-        return new ResponseEntity<>(modelService.getModelWithCarsByName(name), HttpStatus.OK);
+        ResultModel resultModel = new ResultModel();
+        resultModel.setData(modelService.getModelWithCarsByName(name));
+
+        return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
     @PostMapping
-    public ResponseEntity<ModelBasicDTO> createModel(@Valid @RequestBody ModelBasicDTO modelBasicDTO) {
+    public ResponseEntity<ResultModel> createModel(@Valid @RequestBody ModelBasicDTO modelBasicDTO) {
         log.info("CreateModel started with input: {}", modelBasicDTO);
 
-        return new ResponseEntity<>(modelService.createModel(modelBasicDTO), HttpStatus.CREATED);
+        ResultModel resultModel = new ResultModel();
+        ModelBasicDTO model = modelService.createModel(modelBasicDTO);
+
+        if (model == null) {
+            resultModel.setMassage(format("Model with name(%s) already exists", modelBasicDTO.getModel()));
+
+            return new ResponseEntity<>(resultModel, HttpStatus.UNPROCESSABLE_ENTITY);
+        }
+        resultModel.setData(model);
+
+        return new ResponseEntity<>(resultModel, HttpStatus.CREATED);
     }
 
     @PutMapping(Mappings.UPDATE_MODEL_BY_ID)
-    public ResponseEntity<ModelBasicDTO> updateModel(@PathVariable("id") Long id,
-                                                     @Valid @RequestBody ModelBasicDTO modelBasicDTO) {
+    public ResponseEntity<ResultModel> updateModel(@PathVariable("id") Long id,
+                                                   @Valid @RequestBody ModelBasicDTO modelBasicDTO) {
         log.info("UpdateModel started with id: {}, modelBasicDTO: {}", id, modelBasicDTO);
 
-        return new ResponseEntity<>(modelService.updateModel(id, modelBasicDTO), HttpStatus.OK);
+        ResultModel resultModel = new ResultModel();
+        ModelBasicDTO model = modelService.updateModel(id, modelBasicDTO);
+
+        if (model == null) {
+            resultModel.setMassage(format("Model with id(%d) wasn't found", id));
+
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
+
+        resultModel.setData(model);
+
+        return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
     @DeleteMapping(Mappings.DELETE_MODEL_BY_NAME)
     public ResponseEntity<?> deleteModelByName(@NotBlank @PathVariable(name = "name") String name) {
         log.info("DeleteModelByName started with name: {}", name);
 
-        modelService.deleteModelByName(name);
+        boolean isDeleted = modelService.deleteModelByName(name);
+
+        if (!isDeleted) {
+            ResultModel resultModel = new ResultModel();
+            resultModel.setMassage(format("Model with name(%s) wasn't found", name));
+            return new ResponseEntity<>(resultModel, HttpStatus.NOT_FOUND);
+        }
 
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }

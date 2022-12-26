@@ -11,9 +11,9 @@ public interface ManufacturerService {
 
     ManufacturerBasicDTO createManufacturer(ManufacturerBasicDTO manufacturerBasicDTO);
 
-    void deleteAllManufacturerByName(String name);
+    boolean deleteAllManufacturerByName(String name);
 
-    void deleteManufacturerByNameAndYear(String name, Integer year);
+    boolean deleteManufacturerByNameAndYear(String name, Integer year);
 
     ManufacturerBasicDTO updateManufacturer(Long id, ManufacturerBasicDTO ManufacturerBasicDTO);
 
