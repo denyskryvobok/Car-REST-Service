@@ -1,9 +1,7 @@
-package com.foxminded.car_rest_service.entities;
+package com.foxminded.car_rest_service.security.entities;
 
-import lombok.AllArgsConstructor;
-import lombok.Builder;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.Hibernate;
@@ -19,15 +17,13 @@ import javax.persistence.ManyToOne;
 import javax.persistence.Table;
 import java.util.Objects;
 
-@Entity
 @Getter
 @Setter
 @ToString
-@Builder
-@NoArgsConstructor
-@AllArgsConstructor
-@Table(name = "car_category_info")
-public class CarCategoryInfo {
+@RequiredArgsConstructor
+@Entity
+@Table(name = "app_user_role")
+public class AppUserRole {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -35,20 +31,20 @@ public class CarCategoryInfo {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "car_id")
+    @JoinColumn(name = "user_id")
     @ToString.Exclude
-    private Car car;
+    private AppUser appUser;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
+    @JoinColumn(name = "role_id")
     @ToString.Exclude
-    private Category category;
+    private Role role;
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        CarCategoryInfo that = (CarCategoryInfo) o;
+        AppUserRole that = (AppUserRole) o;
         return id != null && Objects.equals(id, that.id);
     }
 

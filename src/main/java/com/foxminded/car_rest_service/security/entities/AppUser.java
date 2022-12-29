@@ -1,8 +1,7 @@
-package com.foxminded.car_rest_service.entities;
+package com.foxminded.car_rest_service.security.entities;
 
-import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.NoArgsConstructor;
+import lombok.RequiredArgsConstructor;
 import lombok.Setter;
 import lombok.ToString;
 import org.hibernate.Hibernate;
@@ -19,36 +18,41 @@ import java.util.HashSet;
 import java.util.Objects;
 import java.util.Set;
 
-@Entity
 @Getter
 @Setter
 @ToString
-@NoArgsConstructor
-@AllArgsConstructor
-@Table(name = "category")
-public class Category {
+@RequiredArgsConstructor
+@Entity
+@Table(name = "app_user")
+public class AppUser {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    @Column(name = "category_id")
+    @Column(name = "user_id")
     private Long id;
 
-    @Column(name = "category")
-    private String category;
+    @Column(name = "username")
+    private String username;
 
-    @OneToMany(cascade = {CascadeType.PERSIST,
-                          CascadeType.MERGE,
-                          CascadeType.REFRESH,
-                          CascadeType.REMOVE}, mappedBy = "category", orphanRemoval = true)
+    @Column(name = "password")
+    private String password;
+
+    @Column(name = "disabled")
+    private Boolean disabled;
+
+    @OneToMany(cascade = {CascadeType.MERGE,
+            CascadeType.PERSIST,
+            CascadeType.REMOVE,
+            CascadeType.REFRESH}, mappedBy = "appUser", orphanRemoval = true)
     @ToString.Exclude
-    private Set<CarCategoryInfo> carCategories = new HashSet<>();
+    private Set<AppUserRole> appUserRoles = new HashSet<>();
 
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || Hibernate.getClass(this) != Hibernate.getClass(o)) return false;
-        Category category = (Category) o;
-        return id != null && Objects.equals(id, category.id);
+        AppUser appUser = (AppUser) o;
+        return id != null && Objects.equals(id, appUser.id);
     }
 
     @Override
