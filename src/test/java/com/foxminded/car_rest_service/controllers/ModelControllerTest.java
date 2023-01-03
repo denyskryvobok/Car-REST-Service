@@ -1,14 +1,12 @@
 package com.foxminded.car_rest_service.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.foxminded.car_rest_service.dao.AppUserDAO;
 import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.exceptions.response.ValidationErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.Violation;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarWithoutModelDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelDTO;
-import com.foxminded.car_rest_service.security.SecurityConfig;
 import com.foxminded.car_rest_service.services.ModelService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,6 +16,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -36,8 +35,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Import(SecurityConfig.class)
-@MockBean(classes = AppUserDAO.class)
+@ActiveProfiles("test")
+@Import(SecurityConfigTest.class)
 @WebMvcTest(controllers = ModelController.class)
 class ModelControllerTest {
     @Autowired
@@ -50,6 +49,7 @@ class ModelControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
+    @WithMockUser(roles = "USER")
     void getAllModels_shouldReturnStatus200WithJsonResponseBody_whenModelsExists() throws Exception {
         List<ModelBasicDTO> modelBasicDTOs = getModelBasicDTOs();
 
@@ -72,6 +72,7 @@ class ModelControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getAllModels_shouldReturnStatus404_whenModelsNotExists() throws Exception {
         when(modelService.getAllModels(any(Pageable.class))).thenReturn(List.of());
 
@@ -92,11 +93,12 @@ class ModelControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getModelWithCarsByName_shouldReturnStatus200WithJsonResponseBody_whenModelsExists() throws Exception {
         ModelDTO modelDTO = getModelDTO();
         when(modelService.getModelWithCarsByName(anyString())).thenReturn(modelDTO);
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/get/name/{name}", "Grand")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/name/{name}", "Grand")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -112,10 +114,11 @@ class ModelControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getModelWithCarsByName_shouldReturnStatus404_whenModelNotExists() throws Exception {
         when(modelService.getModelWithCarsByName(anyString())).thenReturn(null);
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/get/name/{name}", "Grand")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/name/{name}", "Grand")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -131,8 +134,9 @@ class ModelControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getModelWithCarsByName_shouldReturnStatus400_whenModelsExists() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/get/name/{name}", "  ")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/name/{name}", "  ")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -148,7 +152,7 @@ class ModelControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void createModel_shouldReturnStatus201WithJsonResponseBody_whenConstraintViolationException() throws Exception {
         ModelBasicDTO dto = getModelBasicDTO(1L, "NEW");
 
@@ -171,7 +175,7 @@ class ModelControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void createModel_shouldReturnStatus422_whenMethodArgumentNotValidExceptionWasThrown() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/models")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -190,7 +194,7 @@ class ModelControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void createModel_shouldReturnStatus422_whenModelAlreadyExist() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/models")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -209,13 +213,13 @@ class ModelControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "STAFF")
     void updateModel_shouldReturnStatus200AndReturnUpdatedModel_whenModelWasUpdated() throws Exception {
         ModelBasicDTO dto = getModelBasicDTO(1L, "new");
 
         when(modelService.updateModel(1L, dto)).thenReturn(dto);
 
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/models//update/id/{id}", 1)
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/models/id/{id}", 1)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -232,11 +236,11 @@ class ModelControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "STAFF")
     void updateModel_shouldReturnStatus404_whenModelWasNotFound() throws Exception {
         ModelBasicDTO dto = getModelBasicDTO(8L, "new");
 
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/models/update/id/{id}", 8)
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/models/id/{id}", 8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
@@ -253,21 +257,21 @@ class ModelControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteModelByName_shouldReturnStatus204_whenModelWasDeleted() throws Exception {
         when(modelService.deleteModelByName(anyString())).thenReturn(true);
 
-        mockMvc.perform(delete("/api/v1/models/delete/name/{name}", "name")
+        mockMvc.perform(delete("/api/v1/models/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteModelByName_shouldReturnStatus404_whenModelWasNotFound() throws Exception {
         when(modelService.deleteModelByName(anyString())).thenReturn(false);
 
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/models/delete/name/{name}", "name")
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/models/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -283,9 +287,9 @@ class ModelControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteModelByName_shouldReturnStatus400_whenConstraintViolationExceptionThrown() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/models/delete/name/{name}", "  ")
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/models/name/{name}", "  ")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andReturn();

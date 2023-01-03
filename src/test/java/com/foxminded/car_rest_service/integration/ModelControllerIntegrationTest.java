@@ -10,7 +10,7 @@ import com.foxminded.car_rest_service.mapstruct.dto.model.ModelBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.ArrayList;
@@ -28,6 +28,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class ModelControllerIntegrationTest extends IntegrationTestcontainersConfig {
 
     @Test
+    @WithMockUser(roles = "USER")
     void getAllModels_shouldReturnStatus200WithJsonResponseBody_whenModelsExists() throws Exception {
         List<ModelBasicDTO> modelBasicDTOs = getModelBasicDTOs();
 
@@ -48,10 +49,11 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getModelWithCarsByName_shouldReturnStatus200WithJsonResponseBody_whenModelsExists() throws Exception {
         ModelDTO modelDTO = getModelDTO();
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/get/name/{name}", "Grand")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/name/{name}", "Grand")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -67,8 +69,9 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getModelWithCarsByName_shouldReturnStatus404_whenModelNotExists() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/get/name/{name}", "name")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -84,8 +87,9 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getModelWithCarsByName_shouldReturnStatus400_whenModelsExists() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/get/name/{name}", "  ")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/models/name/{name}", "  ")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -101,7 +105,7 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void createModel_shouldReturnStatus201WithJsonResponseBody_whenConstraintViolationException() throws Exception {
         ModelBasicDTO dto = getModelBasicDTO(4L, "NEW");
 
@@ -122,7 +126,7 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void createModel_shouldReturnStatus422_whenMethodArgumentNotValidExceptionWasThrown() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/models")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -141,7 +145,7 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void createModel_shouldReturnStatus422_whenModelAlreadyExist() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/models")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -160,11 +164,11 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "STAFF")
     void updateModel_shouldReturnStatus200AndReturnUpdatedModel_whenModelWasUpdated() throws Exception {
         ModelBasicDTO dto = getModelBasicDTO(1L, "new");
 
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/models//update/id/{id}", 1)
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/models/id/{id}", 1)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -182,11 +186,11 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "STAFF")
     void updateModel_shouldReturnStatus404_whenModelWasNotFound() throws Exception {
         ModelBasicDTO dto = getModelBasicDTO(8L, "new");
 
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/models/update/id/{id}", 8)
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/models/id/{id}", 8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
@@ -204,17 +208,17 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void deleteModelByName_shouldReturnStatus204_whenModelWasDeleted() throws Exception {
-        mockMvc.perform(delete("/api/v1/models/delete/name/{name}", "Regal")
+        mockMvc.perform(delete("/api/v1/models/name/{name}", "Regal")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void deleteModelByName_shouldReturnStatus404_whenModelWasNotFound() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/models/delete/name/{name}", "name")
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/models/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -231,9 +235,9 @@ public class ModelControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void deleteModelByName_shouldReturnStatus400_whenConstraintViolationExceptionThrown() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/models/delete/name/{name}", "  ")
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/models/name/{name}", "  ")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andReturn();

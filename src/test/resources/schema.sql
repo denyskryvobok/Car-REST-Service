@@ -33,24 +33,3 @@ CREATE TABLE car_category_info
     category_id bigint REFERENCES category (category_id),
     car_id      bigint REFERENCES car (car_id)
 );
-
-CREATE TABLE app_user
-(
-    user_id  bigserial PRIMARY KEY,
-    username varchar(50) UNIQUE NOT NULL,
-    password text               NOT NULL,
-    disabled bool
-);
-
-CREATE TABLE role
-(
-    role_id serial PRIMARY KEY,
-    name    varchar(30) UNIQUE NOT NULL
-);
-
-CREATE TABLE app_user_role
-(
-    id      bigserial PRIMARY KEY,
-    user_id bigint REFERENCES app_user (user_id),
-    role_id bigint REFERENCES role (role_id)
-);

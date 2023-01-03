@@ -3,20 +3,6 @@ VALUES ('Touareg 2'),
        ('Regal'),
        ('Grand');
 
-INSERT INTO role(name)
-VALUES ('ADMIN'),
-       ('USER');
-
-INSERT INTO app_user (username, password, disabled)
-VALUES ('jamessmith', '$2a$10$k82frkwHnma39AQH9WEOUuY1l102RFjI/CP8xHZdQZPv9BF0QAPfu', false),
-       ('maryjones', '$2a$10$k82frkwHnma39AQH9WEOUuY1l102RFjI/CP8xHZdQZPv9BF0QAPfu', false),
-       ('roberttaylor', '$2a$10$k82frkwHnma39AQH9WEOUuY1l102RFjI/CP8xHZdQZPv9BF0QAPfu', false);
-
-INSERT INTO app_user_role(user_id, role_id)
-VALUES (1, 1),
-       (2, 2),
-       (3, 2);
-
 INSERT INTO manufacturer(manufacturer, year)
 VALUES ('Acura', 2017),
        ('Acura', 2005),

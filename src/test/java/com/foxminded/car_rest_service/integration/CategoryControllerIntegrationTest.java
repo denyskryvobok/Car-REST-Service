@@ -10,7 +10,7 @@ import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerBas
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelBasicDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
-import org.springframework.security.test.context.support.WithUserDetails;
+import org.springframework.security.test.context.support.WithMockUser;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.LinkedHashSet;
@@ -27,6 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 public class CategoryControllerIntegrationTest extends IntegrationTestcontainersConfig {
 
     @Test
+    @WithMockUser(roles = "USER")
     void getAllCategories_shouldReturnCategoryBasicDTOs_whenCategoriesExist() throws Exception {
         List<CategoryBasicDTO> categories = getCategories();
 
@@ -46,10 +47,11 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getCategoryWithCarsByName_shouldReturnCategoryDTO_whenCategoriesExist() throws Exception {
         CategoryDTO category = getCategoryWithCars();
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/categories/get/name/{name}", "Convertible")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/categories/name/{name}", "Convertible")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -65,8 +67,9 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getCategoryWithCarsByName_shouldReturnStatus404_whenCategoriesNotExist() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/categories/get/name/{name}", "name")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/categories/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -82,7 +85,7 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void createCategory_shouldReturnCategoryBasicDTO_whenInputCategoryNotExists() throws Exception {
         CategoryBasicDTO category = getBasicCategory(4L, "name");
 
@@ -103,7 +106,7 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void createCategory_shouldReturnStatus422_whenCategoryAlreadyExists() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/categories")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -122,7 +125,7 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void createCategory_shouldReturnStatus422_whenMethodArgumentNotValidExceptionWasThrown() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/categories")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -141,11 +144,11 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "STAFF")
     void updateCategory_shouldReturnStatus200AndReturnUpdatedCategory_whenCategoryWasUpdated() throws Exception {
         CategoryBasicDTO dto = getBasicCategory(1L, "new");
 
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/categories//update/id/{id}", 1)
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/categories/id/{id}", 1)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -161,11 +164,11 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "STAFF")
     void updateCategory_shouldReturnStatus404_whenCategoryWasNotFound() throws Exception {
         CategoryBasicDTO dto = getBasicCategory(8L, "new");
 
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/categories/update/id/{id}", 8)
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/categories/id/{id}", 8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
@@ -183,17 +186,17 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void deleteCategoryByName_shouldReturnStatus204_whenCategoryWasDeleted() throws Exception {
-        mockMvc.perform(delete("/api/v1/categories/delete/name/{name}", "Convertible")
+        mockMvc.perform(delete("/api/v1/categories/name/{name}", "Convertible")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void deleteCategoryByName_shouldReturnStatus404_whenCategoryWasNotFound() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/categories/delete/name/{name}", "name")
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/categories/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -209,9 +212,9 @@ public class CategoryControllerIntegrationTest extends IntegrationTestcontainers
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void deleteCategoryByName_shouldReturnStatus400_whenConstraintViolationExceptionThrown() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/categories/delete/name/{name}", "  ")
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/categories/name/{name}", "  ")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andReturn();

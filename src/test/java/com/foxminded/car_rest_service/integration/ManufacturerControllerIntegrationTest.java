@@ -11,7 +11,6 @@ import com.foxminded.car_rest_service.mapstruct.dto.model.ModelBasicDTO;
 import org.junit.jupiter.api.Test;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
-import org.springframework.security.test.context.support.WithUserDetails;
 import org.springframework.test.web.servlet.MvcResult;
 
 import java.util.LinkedHashSet;
@@ -28,7 +27,7 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersConfig {
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "USER")
     void getAllUniqueManufacturers_shouldReturnNamesOfManufacturers_whenManufacturersExist() throws Exception {
         List<String> manufacturers = getNamesOfManufacturers();
         MvcResult mvcResult = mockMvc.perform(get("/api/v1/manufacturers")
@@ -47,11 +46,11 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "USER")
     void getAllManufacturersByName_shouldReturnManufactureDTOs_whenManufacturersExist() throws Exception {
         List<ManufacturerDTO> manufacturerDTOS = getAllManufacturers();
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/manufacturers/get/name/{name}", "Acura")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/manufacturers/name/{name}", "Acura")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -67,9 +66,9 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "USER")
     void getAllManufacturersByName_shouldReturnStatus404_whenManufacturersNotExist() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/manufacturers/get/name/{name}", "name")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/manufacturers/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -85,7 +84,7 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void createManufacturer_shouldReturnCreatedManufacturerBasicDTO_whenInputManufacturerNotExists() throws Exception {
         ManufacturerBasicDTO manufacturer = getManufacturerBasicDTO(7L, "NEW_MANUFACTURER", 2030);
 
@@ -106,7 +105,7 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void createManufacturer_shouldReturnStatus422_whenManufacturerAlreadyExist() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/manufacturers")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -125,7 +124,7 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void createManufacturer_shouldReturnStatus422_whenMethodArgumentNotValidExceptionWasThrown() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/manufacturers")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -144,11 +143,11 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "STAFF")
     void updateManufacturer_shouldReturnStatus200AndReturnUpdatedManufacturer_whenManufacturerWasUpdated() throws Exception {
         ManufacturerBasicDTO dto = getManufacturerBasicDTO(1L, "new", 2000);
 
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/manufacturers/update/by/{id}", 1)
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/manufacturers/id/{id}", 1)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -165,11 +164,11 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "STAFF")
     void updateManufacturer_shouldReturnStatus404_whenManufacturerWasNotFound() throws Exception {
         ManufacturerBasicDTO dto = getManufacturerBasicDTO(8L, "new", 200);
 
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/manufacturers/update/by/{id}", 8)
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/manufacturers/id/{id}", 8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
@@ -186,17 +185,17 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void deleteAllManufacturerByName_shouldReturnStatus204_whenManufacturerWasDeleted() throws Exception {
-        mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}", "Acura")
+        mockMvc.perform(delete("/api/v1/manufacturers/name/{name}", "Acura")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void deleteAllManufacturerByName_shouldReturnStatus400_whenConstraintViolationExceptionThrown() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}", "  ")
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/manufacturers/name/{name}", "  ")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -212,9 +211,9 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void deleteAllManufacturerByName_shouldReturnStatus404_whenManufacturersWasNotFound() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}", "name")
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/manufacturers/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -230,17 +229,17 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void deleteManufacturerByNameAndYear_shouldReturnStatus204_whenManufacturerWasDeleted() throws Exception {
-        mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}/year/{year}", "Acura", 2017)
+        mockMvc.perform(delete("/api/v1/manufacturers/name/{name}/year/{year}", "Acura", 2017)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void deleteManufacturerByNameAndYear_shouldReturnStatus400_whenConstraintViolationExceptionThrown() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}/year/{year}", "  ", 2000)
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/manufacturers/name/{name}/year/{year}", "  ", 2000)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -256,10 +255,10 @@ class ManufacturerControllerIntegrationTest extends IntegrationTestcontainersCon
     }
 
     @Test
-    @WithUserDetails("jamessmith")
+    @WithMockUser(roles = "ADMIN")
     void deleteManufacturerByNameAndYear_shouldReturnStatus404_whenManufacturersWasNotFound() throws Exception {
         MvcResult mvcResult =
-                mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}/year/{year}", "name", 2000)
+                mockMvc.perform(delete("/api/v1/manufacturers/name/{name}/year/{year}", "name", 2000)
                                 .contentType(MediaType.APPLICATION_JSON))
                         .andExpect(status().isNotFound())
                         .andReturn();
