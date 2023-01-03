@@ -1,10 +1,12 @@
 package com.foxminded.car_rest_service.integration;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.foxminded.car_rest_service.controllers.SecurityConfigTest;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.web.servlet.AutoConfigureMockMvc;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
@@ -13,9 +15,10 @@ import org.springframework.test.web.servlet.MockMvc;
 import org.testcontainers.containers.PostgreSQLContainer;
 
 @SpringBootTest
-@Sql(scripts = {"classpath:schema.sql", "classpath:data.sql"})
-@ActiveProfiles("test")
 @AutoConfigureMockMvc
+@ActiveProfiles("test")
+@Import(SecurityConfigTest.class)
+@Sql(scripts = {"classpath:schema.sql", "classpath:data.sql"})
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 public abstract class IntegrationTestcontainersConfig {
     private static final PostgreSQLContainer<?> postgresqlContainer;

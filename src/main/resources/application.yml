@@ -18,3 +18,13 @@ spring:
   flyway:
     default-schema: car_rest
     create-schemas: true
+
+keycloak:
+  realm: car-service-realm
+  auth-server-url: http://localhost:8180/auth
+  resource: car-service
+  credentials:
+    secret: Lkrcb5O89rRm01Fy8KiRX7DrYZlJ89fJ
+  bearer-only: true
+  ssl-required: external
+  use-resource-role-mappings: true

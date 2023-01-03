@@ -1,7 +1,6 @@
 package com.foxminded.car_rest_service.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.foxminded.car_rest_service.dao.AppUserDAO;
 import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.exceptions.response.ValidationErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.Violation;
@@ -10,7 +9,6 @@ import com.foxminded.car_rest_service.mapstruct.dto.car.CarWithoutCategoriesDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.category.CategoryBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelBasicDTO;
-import com.foxminded.car_rest_service.security.SecurityConfig;
 import com.foxminded.car_rest_service.services.CarService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -20,6 +18,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -29,13 +28,18 @@ import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.*;
-import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.*;
+import static org.mockito.Mockito.anyInt;
+import static org.mockito.Mockito.anyLong;
+import static org.mockito.Mockito.anyString;
+import static org.mockito.Mockito.when;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Import(SecurityConfig.class)
-@MockBean(classes = AppUserDAO.class)
+@ActiveProfiles("test")
+@Import(SecurityConfigTest.class)
 @WebMvcTest(controllers = CarController.class)
 class CarControllerTest {
 
@@ -49,6 +53,7 @@ class CarControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
+    @WithMockUser(roles = "USER")
     void getAllCars_shouldReturnCarDTOs_whenCarsExist() throws Exception {
         List<CarDTO> cars = getCars();
         when(carService.getAllCars(any(Pageable.class))).thenReturn(cars);
@@ -69,6 +74,7 @@ class CarControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getAllCars_shouldReturnStatus404_whenCarsNotExist() throws Exception {
         when(carService.getAllCars(any(Pageable.class))).thenReturn(List.of());
 
@@ -88,11 +94,12 @@ class CarControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getAllCarsByManufacturer_shouldReturn_whenCarsWithInputManufacturerExist() throws Exception {
         List<CarDTO> cars = getCarsWithManufacturers();
         when(carService.getAllCarsByManufacturer(anyString(), any(Pageable.class))).thenReturn(cars);
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/cars/get/manufacturer")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/cars/manufacturer")
                         .param("manufacturer", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
@@ -109,10 +116,11 @@ class CarControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getAllCarsByManufacturer_shouldReturnStatus404_whenCarsWithInputManufacturerNotExist() throws Exception {
         when(carService.getAllCarsByManufacturer(anyString(), any(Pageable.class))).thenReturn(List.of());
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/cars/get/manufacturer")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/cars/manufacturer")
                         .param("manufacturer", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
@@ -129,12 +137,13 @@ class CarControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getAllCarsByManufacturerAndMinYear_shouldReturnCarDTOs_whenCarsWithInputManufacturerExist() throws Exception {
 
         List<CarDTO> cars = getCarsWithManufacturersByNameAndYear();
         when(carService.getAllCarsByManufacturerAndMinYear(anyString(), anyInt(), any(Pageable.class))).thenReturn(cars);
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/cars/get/manufacturer/year")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/cars/manufacturer/year")
                         .param("manufacturer", "name")
                         .param("year", "2000")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -152,10 +161,11 @@ class CarControllerTest {
     }
 
     @Test
+    @WithMockUser(roles = "USER")
     void getAllCarsByManufacturerAndMinYear_shouldReturnStatus404_whenCarsWithInputManufacturerNotExist() throws Exception {
         when(carService.getAllCarsByManufacturerAndMinYear(anyString(), anyInt(), any(Pageable.class))).thenReturn(List.of());
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/cars/get/manufacturer/year")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/cars/manufacturer/year")
                         .param("manufacturer", "name")
                         .param("year", "2000")
                         .contentType(MediaType.APPLICATION_JSON))
@@ -173,7 +183,7 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void createCar_shouldReturnCarWithoutCategoriesDTO_whenCarCreated() throws Exception {
         CarWithoutCategoriesDTO car = getCarWithoutCategoriesDTO();
         when(carService.createCar(anyString(), anyString(), anyInt())).thenReturn(car);
@@ -196,7 +206,7 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void createCar_shouldReturnStatus422_whenCarAlreadyExist() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/cars/manufacturer/{manufacturer}/model/{model}/year/{year}",
                         "manufacturer", "model", 2000)
@@ -215,7 +225,7 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void createCar_shouldReturnStatus400_whenConstraintViolationExceptionThrown() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/cars/manufacturer/{manufacturer}/model/{model}/year/{year}",
                         "  ", "model", 2000)
@@ -234,7 +244,7 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "STAFF")
     void updateCar_shouldReturnStatus200_whenInputCarExist() throws Exception {
         CarWithoutCategoriesDTO dto = getCarWithoutCategoriesDTOForUpdate();
 
@@ -257,7 +267,7 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "STAFF")
     void updateCar_shouldReturnStatus422_whenManufacturerIsNull() throws Exception {
         CarWithoutCategoriesDTO dto = getCarWithoutCategoriesDTOWithoutManufacturer();
         MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars")
@@ -277,7 +287,7 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "STAFF")
     void updateCar_shouldReturnStatus404_whenCarIsNotFound() throws Exception {
         CarWithoutCategoriesDTO dto = getCarWithoutCategoriesDTOForUpdate();
         MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars")
@@ -297,21 +307,21 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteById_shouldReturnStatus204_whenCarWasDeleted() throws Exception {
         when(carService.deleteCarById(anyLong())).thenReturn(true);
 
-        mockMvc.perform(delete("/api/v1/cars//delete/id/{id}", 1)
+        mockMvc.perform(delete("/api/v1/cars/id/{id}", 1)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteById_shouldReturnStatus404_whenCarWasNotFound() throws Exception {
         when(carService.deleteCarById(anyLong())).thenReturn(false);
 
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/cars/delete/id/{id}", 1L)
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/cars/id/{id}", 1L)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -327,13 +337,13 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "STAFF")
     void addCarToCategory_shouldReturnCarDTO_whenCarWasAddedToInputCategory() throws Exception {
         CarDTO car = getCarDtOWithCategoriesAfterAddCategory();
 
         when(carService.addCarToCategory(anyLong(), anyString())).thenReturn(car);
 
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/add/{id}/category/{name}", 1L, "name")
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/id/{id}/category/{name}", 1L, "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -349,9 +359,9 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "STAFF")
     void addCarToCategory_shouldReturnStatusCode404_whenCarByInputIdNotExist() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/add/{id}/category/{name}", 1L, "name")
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/id/{id}/category/{name}", 1L, "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -367,9 +377,9 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "STAFF")
     void addCarToCategory_shouldReturnStatus400_whenConstraintViolationExceptionThrown() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/add/{id}/category/{name}", 1L, "  ")
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/id/{id}/category/{name}", 1L, "  ")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -385,12 +395,12 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "STAFF")
     void removeCarFromCategory_shouldReturnCarDto_whenCarWasRemovedFromInputCategory() throws Exception {
         CarDTO car = getCarDtOWithCategoriesAfterDeleteCategory();
         when(carService.removeCarFromCategory(anyLong(), anyString())).thenReturn(car);
 
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/remove/{id}/category/{name}", 1L, "name")
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/remove/id/{id}/category/{name}", 1L, "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -405,9 +415,9 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "STAFF")
     void removeCarFromCategory_shouldReturnStatusCode404_whenCarByInputIdNotExist() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/remove/{id}/category/{name}", 1L, "name")
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/remove/id/{id}/category/{name}", 1L, "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -423,9 +433,9 @@ class CarControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "STAFF")
     void removeCarFromCategory_shouldReturnStatus400_whenConstraintViolationExceptionThrown() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/remove/{id}/category/{name}", 1L, "  ")
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/cars/remove/id/{id}/category/{name}", 1L, "  ")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andReturn();

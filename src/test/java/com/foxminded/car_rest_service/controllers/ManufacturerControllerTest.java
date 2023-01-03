@@ -1,13 +1,11 @@
 package com.foxminded.car_rest_service.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.foxminded.car_rest_service.dao.AppUserDAO;
 import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.exceptions.response.ValidationErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.Violation;
 import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerDTO;
-import com.foxminded.car_rest_service.security.SecurityConfig;
 import com.foxminded.car_rest_service.services.ManufacturerService;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,6 +15,7 @@ import org.springframework.context.annotation.Import;
 import org.springframework.data.domain.Pageable;
 import org.springframework.http.MediaType;
 import org.springframework.security.test.context.support.WithMockUser;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.MvcResult;
 
@@ -33,8 +32,8 @@ import static org.springframework.test.web.servlet.request.MockMvcRequestBuilder
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
 
-@Import(SecurityConfig.class)
-@MockBean(classes = AppUserDAO.class)
+@ActiveProfiles("test")
+@Import(SecurityConfigTest.class)
 @WebMvcTest(controllers = ManufacturerController.class)
 class ManufacturerControllerTest {
 
@@ -48,7 +47,7 @@ class ManufacturerControllerTest {
     private ObjectMapper objectMapper;
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "USER")
     void getAllUniqueManufacturers_shouldReturnNamesOfManufacturers_whenManufacturersExist() throws Exception {
         List<String> manufacturers = getNamesOfManufacturers();
 
@@ -70,7 +69,7 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "USER")
     void getAllUniqueManufacturers_shouldReturnStatus404_whenManufacturersNotExist() throws Exception {
         when(manufacturerService.getAllUniqueManufacturers(any(Pageable.class))).thenReturn(List.of());
 
@@ -90,14 +89,14 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "USER")
     void getAllManufacturersByName_shouldReturnManufactureDTOs_whenManufacturersExist() throws Exception {
         List<ManufacturerDTO> manufacturerDTOS = getAllManufacturers();
 
         when(manufacturerService.getAllManufacturersByName(anyString(), any(Pageable.class)))
                 .thenReturn(manufacturerDTOS);
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/manufacturers/get/name/{name}", "Acura")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/manufacturers/name/{name}", "Acura")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andReturn();
@@ -113,11 +112,11 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "USER")
     void getAllManufacturersByName_shouldReturnStatus404_whenManufacturersNotExist() throws Exception {
         when(manufacturerService.getAllManufacturersByName(anyString(), any(Pageable.class))).thenReturn(List.of());
 
-        MvcResult mvcResult = mockMvc.perform(get("/api/v1/manufacturers/get/name/{name}", "Acura")
+        MvcResult mvcResult = mockMvc.perform(get("/api/v1/manufacturers/name/{name}", "Acura")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -133,7 +132,7 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void createManufacturer_shouldReturnCreatedManufacturerBasicDTO_whenInputManufacturerNotExists() throws Exception {
         ManufacturerBasicDTO manufacturer = getManufacturerBasicDTO(1L, "NEW_MANUFACTURER", 2030);
 
@@ -157,7 +156,7 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void createManufacturer_shouldReturnStatus422_whenManufacturerAlreadyExists() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/manufacturers")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -176,7 +175,7 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void createManufacturer_shouldReturnStatus422_whenMethodArgumentNotValidExceptionWasThrown() throws Exception {
         MvcResult mvcResult = mockMvc.perform(post("/api/v1/manufacturers")
                         .contentType(MediaType.APPLICATION_JSON)
@@ -195,13 +194,13 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "STAFF")
     void updateManufacturer_shouldReturnStatus200AndReturnUpdatedManufacturer_whenManufacturerWasUpdated() throws Exception {
         ManufacturerBasicDTO dto = getManufacturerBasicDTO(1L, "new", 2000);
 
         when(manufacturerService.updateManufacturer(1L, dto)).thenReturn(dto);
 
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/manufacturers/update/by/{id}", 1)
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/manufacturers/id/{id}", 1)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isOk())
@@ -218,11 +217,11 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "STAFF")
     void updateManufacturer_shouldReturnStatus404_whenManufacturerWasNotFound() throws Exception {
         ManufacturerBasicDTO dto = getManufacturerBasicDTO(8L, "new", 200);
 
-        MvcResult mvcResult = mockMvc.perform(put("/api/v1/manufacturers/update/by/{id}", 8)
+        MvcResult mvcResult = mockMvc.perform(put("/api/v1/manufacturers/id/{id}", 8)
                         .contentType(MediaType.APPLICATION_JSON)
                         .content(objectMapper.writeValueAsString(dto)))
                 .andExpect(status().isNotFound())
@@ -239,19 +238,19 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteAllManufacturerByName_shouldReturnStatus204_whenManufacturerWasDeleted() throws Exception {
         when(manufacturerService.deleteAllManufacturerByName(anyString())).thenReturn(true);
 
-        mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}", "name")
+        mockMvc.perform(delete("/api/v1/manufacturers/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteAllManufacturerByName_shouldReturnStatus400_whenConstraintViolationExceptionThrown() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}", "  ")
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/manufacturers/name/{name}", "  ")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -267,11 +266,11 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteAllManufacturerByName_shouldReturnStatus404_whenManufacturersWasNotFound() throws Exception {
         when(manufacturerService.deleteAllManufacturerByName(anyString())).thenReturn(false);
 
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}", "name")
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/manufacturers/name/{name}", "name")
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNotFound())
                 .andReturn();
@@ -287,19 +286,19 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteManufacturerByNameAndYear_shouldReturnStatus204_whenManufacturerWasDeleted() throws Exception {
         when(manufacturerService.deleteManufacturerByNameAndYear(anyString(), anyInt())).thenReturn(true);
 
-        mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}/year/{year}", "name", 2000)
+        mockMvc.perform(delete("/api/v1/manufacturers/name/{name}/year/{year}", "name", 2000)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isNoContent());
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteManufacturerByNameAndYear_shouldReturnStatus400_whenConstraintViolationExceptionThrown() throws Exception {
-        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}/year/{year}", "  ", 2000)
+        MvcResult mvcResult = mockMvc.perform(delete("/api/v1/manufacturers/name/{name}/year/{year}", "  ", 2000)
                         .contentType(MediaType.APPLICATION_JSON))
                 .andExpect(status().isBadRequest())
                 .andReturn();
@@ -315,12 +314,12 @@ class ManufacturerControllerTest {
     }
 
     @Test
-    @WithMockUser
+    @WithMockUser(roles = "ADMIN")
     void deleteManufacturerByNameAndYear_shouldReturnStatus404_whenManufacturersWasNotFound() throws Exception {
         when(manufacturerService.deleteManufacturerByNameAndYear(anyString(), anyInt())).thenReturn(false);
 
         MvcResult mvcResult =
-                mockMvc.perform(delete("/api/v1/manufacturers/delete/name/{name}/year/{year}", "name", 2000)
+                mockMvc.perform(delete("/api/v1/manufacturers/name/{name}/year/{year}", "name", 2000)
                                 .contentType(MediaType.APPLICATION_JSON))
                         .andExpect(status().isNotFound())
                         .andReturn();
