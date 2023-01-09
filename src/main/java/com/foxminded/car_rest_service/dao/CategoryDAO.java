@@ -15,9 +15,9 @@ public interface CategoryDAO extends JpaRepository<Category, Long> {
 
     @Query(value = "SELECT c FROM Category c " +
                    "LEFT JOIN FETCH c.carCategories cc " +
-                   "JOIN FETCH cc.car cr " +
-                   "JOIN FETCH cr.model m " +
-                   "JOIN FETCH cr.manufacturer mf " +
+                   "LEFT JOIN FETCH cc.car cr " +
+                   "LEFT JOIN FETCH cr.model m " +
+                   "LEFT JOIN FETCH cr.manufacturer mf " +
                    "WHERE c.category = :name ")
     Optional<Category> findCategoryWithCarsByName(String name);
 

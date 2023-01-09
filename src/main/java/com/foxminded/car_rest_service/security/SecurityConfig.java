@@ -31,6 +31,7 @@ public class SecurityConfig extends KeycloakWebSecurityConfigurerAdapter {
                 .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
                 .and()
                 .authorizeRequests()
+                .regexMatchers("/api-doc.+", "/swagger-ui.+").permitAll()
                 .mvcMatchers(HttpMethod.GET, "/**").hasAnyRole(USER.toString(), ADMIN.toString(), STAFF.toString())
                 .mvcMatchers(HttpMethod.PUT, "/**").hasAnyRole(ADMIN.toString(), STAFF.toString())
                 .mvcMatchers(HttpMethod.POST, "/**").hasAnyRole(ADMIN.toString())

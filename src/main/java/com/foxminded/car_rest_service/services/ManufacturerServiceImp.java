@@ -2,6 +2,7 @@ package com.foxminded.car_rest_service.services;
 
 import com.foxminded.car_rest_service.dao.ManufacturerDAO;
 import com.foxminded.car_rest_service.entities.Manufacturer;
+import com.foxminded.car_rest_service.exceptions.DataAlreadyExistException;
 import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerDTO;
 import com.foxminded.car_rest_service.mapstruct.mapper.ManufacturerMapper;
@@ -15,6 +16,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Set;
 import java.util.stream.Collectors;
+
+import static java.lang.String.format;
 
 @Slf4j
 @Service
@@ -65,6 +68,10 @@ public class ManufacturerServiceImp implements ManufacturerService {
     @Override
     public ManufacturerBasicDTO updateManufacturer(Long id, ManufacturerBasicDTO manufacturerBasicDTO) {
         log.info("UpdateManufacturer started with id: {}, manufacturerBasicDTO: {}", id, manufacturerBasicDTO);
+
+        manufacturerDAO.findByNameAndYear(manufacturerBasicDTO.getManufacturer(), manufacturerBasicDTO.getYear()).ifPresent(m -> {
+            throw new DataAlreadyExistException(format("Manufacturer with name(%s) and year(%d) already exists", m.getManufacturer(), m.getYear()));
+        });
 
         return manufacturerDAO.findById(id)
                 .map(m -> {

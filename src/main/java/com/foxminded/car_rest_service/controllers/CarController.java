@@ -11,7 +11,15 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
@@ -24,11 +32,12 @@ import static java.lang.String.format;
 @Validated
 @RestController
 @RequestMapping(Mappings.API_V1_CARS)
-public class CarController {
+public class CarController implements CarOpenApi {
 
     @Autowired
     private CarService carService;
 
+    @Override
     @GetMapping
     public ResponseEntity<ResultModel> getAllCars(Pageable pageable) {
         log.info("GetAllCars started");
@@ -45,6 +54,7 @@ public class CarController {
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
+    @Override
     @GetMapping(Mappings.GET_CARS_BY_MANUFACTURER)
     public ResponseEntity<ResultModel> getAllCarsByManufacturer(@NotBlank @RequestParam String manufacturer, Pageable pageable) {
         log.info("GetAllCarsByManufacturer started with manufacturer: {}", manufacturer);
@@ -62,6 +72,7 @@ public class CarController {
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
+    @Override
     @GetMapping(Mappings.GET_CARS_BY_MANUFACTURER_AND_YEAR)
     public ResponseEntity<ResultModel> getAllCarsByManufacturerAndMinYear(@NotBlank @RequestParam String manufacturer,
                                                                           @RequestParam Integer year,
@@ -79,6 +90,7 @@ public class CarController {
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
+    @Override
     @PostMapping(Mappings.CREATE_CAR)
     public ResponseEntity<ResultModel> createCar(@NotBlank @PathVariable(name = "manufacturer") String manufacturer,
                                                  @NotBlank @PathVariable(name = "model") String model,
@@ -101,6 +113,7 @@ public class CarController {
         return new ResponseEntity<>(resultModel, HttpStatus.CREATED);
     }
 
+    @Override
     @PutMapping
     public ResponseEntity<ResultModel> updateCar(@Valid @RequestBody CarWithoutCategoriesDTO carWithoutCategoriesDTO) {
         log.info("UpdateCar started");
@@ -120,6 +133,7 @@ public class CarController {
     }
 
 
+    @Override
     @DeleteMapping(Mappings.DELETE_CAR_BY_ID)
     public ResponseEntity<?> deleteCarById(@PathVariable(name = "id") Long id) {
         log.info("DeleteCarById started with id: {}", id);
@@ -135,6 +149,7 @@ public class CarController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
+    @Override
     @PutMapping(Mappings.ADD_CAR_TO_CATEGORY)
     public ResponseEntity<ResultModel> addCarToCategory(@PathVariable(name = "id") Long id,
                                                         @NotBlank @PathVariable(name = "name") String name) {
@@ -155,6 +170,7 @@ public class CarController {
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
+    @Override
     @PutMapping(Mappings.DELETE_CAR_FROM_CATEGORY)
     public ResponseEntity<ResultModel> removeCarFromCategory(@PathVariable(name = "id") Long id,
                                                              @NotBlank @PathVariable(name = "name") String name) {

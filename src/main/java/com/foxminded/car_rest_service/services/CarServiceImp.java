@@ -9,6 +9,7 @@ import com.foxminded.car_rest_service.entities.CarCategoryInfo;
 import com.foxminded.car_rest_service.entities.Category;
 import com.foxminded.car_rest_service.entities.Manufacturer;
 import com.foxminded.car_rest_service.entities.Model;
+import com.foxminded.car_rest_service.exceptions.DataAlreadyExistException;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.car.CarWithoutCategoriesDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.manufacturer.ManufacturerBasicDTO;
@@ -23,6 +24,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
 import java.util.Optional;
 
+import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 
 @Slf4j
@@ -78,6 +80,16 @@ public class CarServiceImp implements CarService {
     @Transactional
     public CarWithoutCategoriesDTO updateCar(CarWithoutCategoriesDTO carWithoutCategoriesDTO) {
         log.info("UpdateCar started");
+
+        carDAO.findByManufacturerAndModelAndYear(carWithoutCategoriesDTO.getManufacturer().getManufacturer(),
+                carWithoutCategoriesDTO.getModel().getModel(),
+                carWithoutCategoriesDTO.getManufacturer().getYear()).ifPresent(car -> {
+                    throw new DataAlreadyExistException(format(
+                            "Car with manufacturer(%s), model(%s), and year(%d) already exists",
+                            car.getManufacturer().getManufacturer(), car.getModel().getModel(), car.getManufacturer().getYear()
+                    ));
+        });
+
         return carDAO.findById(carWithoutCategoriesDTO.getId())
                 .map(car -> {
 

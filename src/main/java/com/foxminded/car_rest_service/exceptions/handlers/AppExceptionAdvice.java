@@ -1,9 +1,13 @@
 package com.foxminded.car_rest_service.exceptions.handlers;
 
+import com.foxminded.car_rest_service.exceptions.DataAlreadyExistException;
+import com.foxminded.car_rest_service.exceptions.response.ResultModel;
 import com.foxminded.car_rest_service.exceptions.response.ValidationErrorResponse;
 import com.foxminded.car_rest_service.exceptions.response.Violation;
+import io.swagger.v3.oas.annotations.Hidden;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.FieldError;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
@@ -13,6 +17,7 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import javax.validation.ConstraintViolationException;
 
 @Slf4j
+@Hidden
 @RestControllerAdvice
 public class AppExceptionAdvice {
 
@@ -40,5 +45,16 @@ public class AppExceptionAdvice {
         }
 
         return error;
+    }
+
+    @ResponseStatus(HttpStatus.UNPROCESSABLE_ENTITY)
+    @ExceptionHandler(DataAlreadyExistException.class)
+    public ResponseEntity<?> handelDataAlreadyExistException(DataAlreadyExistException e) {
+        log.info("HandelDataAlreadyExistException started");
+
+        ResultModel resultModel = new ResultModel();
+        resultModel.setMassage(e.getMessage());
+
+        return new ResponseEntity<>(resultModel, HttpStatus.UNPROCESSABLE_ENTITY);
     }
 }
