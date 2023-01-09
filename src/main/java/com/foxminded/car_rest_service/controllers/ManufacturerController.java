@@ -31,11 +31,12 @@ import static java.lang.String.format;
 @Validated
 @RestController
 @RequestMapping(Mappings.API_V1_MANUFACTURERS)
-public class ManufacturerController {
+public class ManufacturerController implements ManufacturerOpenApi {
 
     @Autowired
     private ManufacturerService manufacturerService;
 
+    @Override
     @GetMapping
     public ResponseEntity<ResultModel> getAllUniqueManufacturers(Pageable pageable) {
         log.info("GetAllUniqueManufacturers started");
@@ -51,6 +52,7 @@ public class ManufacturerController {
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
+    @Override
     @GetMapping(Mappings.GET_MANUFACTURER_BY_NAME)
     public ResponseEntity<ResultModel> getAllManufacturersByName(@NotBlank @PathVariable("name") String name,
                                                                  Pageable pageable) {
@@ -67,6 +69,7 @@ public class ManufacturerController {
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
+    @Override
     @PostMapping
     public ResponseEntity<ResultModel> createManufacturer(@Valid @RequestBody ManufacturerBasicDTO manufacturerDTO) {
         log.info("CreateManufacturer started with input: {}", manufacturerDTO);
@@ -87,6 +90,7 @@ public class ManufacturerController {
         return new ResponseEntity<>(resultModel, HttpStatus.CREATED);
     }
 
+    @Override
     @PutMapping(Mappings.UPDATE_MANUFACTURER_BY_ID)
     public ResponseEntity<ResultModel> updateManufacturer(@PathVariable("id") Long id,
                                                           @Valid @RequestBody ManufacturerBasicDTO manufacturerBasicDTO) {
@@ -107,6 +111,7 @@ public class ManufacturerController {
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
+    @Override
     @DeleteMapping(Mappings.DELETE_MANUFACTURER_BY_NAME_AND_YEAR)
     public ResponseEntity<?> deleteManufacturerByNameAndYear(@NotBlank @PathVariable(name = "name") String name,
                                                              @PathVariable(name = "year") Integer year) {
@@ -123,6 +128,7 @@ public class ManufacturerController {
         return new ResponseEntity<>(HttpStatus.NO_CONTENT);
     }
 
+    @Override
     @DeleteMapping(Mappings.DELETE_MANUFACTURER_BY_NAME)
     public ResponseEntity<?> deleteAllManufacturerByName(@NotBlank @PathVariable(name = "name") String name) {
         log.info("DeleteManufacturerByName started with name: {}", name);

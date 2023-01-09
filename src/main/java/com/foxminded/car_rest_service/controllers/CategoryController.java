@@ -22,7 +22,6 @@ import org.springframework.web.bind.annotation.RestController;
 
 import javax.validation.Valid;
 import javax.validation.constraints.NotBlank;
-
 import java.util.List;
 
 import static java.lang.String.format;
@@ -31,11 +30,12 @@ import static java.lang.String.format;
 @Validated
 @RestController
 @RequestMapping(Mappings.API_V1_CATEGORIES)
-public class CategoryController {
+public class CategoryController implements CategoryOpenApi {
 
     @Autowired
     private CategoryService categoryService;
 
+    @Override
     @GetMapping
     public ResponseEntity<ResultModel> getAllCategories(Pageable pageable) {
         log.info("GetAllCategories started");
@@ -51,6 +51,7 @@ public class CategoryController {
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
+    @Override
     @GetMapping(Mappings.GET_CATEGORY_BY_NAME)
     public ResponseEntity<ResultModel> getCategoryWithCarsByName(@NotBlank @PathVariable(name = "name") String name) {
         log.info("GetCategoryWithCarsByName started with name: {}", name);
@@ -66,6 +67,7 @@ public class CategoryController {
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
+    @Override
     @PostMapping
     public ResponseEntity<ResultModel> createCategory(@Valid @RequestBody CategoryBasicDTO categoryBasicDTO) {
         log.info("CreateCategory started with input: {}", categoryBasicDTO);
@@ -85,6 +87,7 @@ public class CategoryController {
         return new ResponseEntity<>(resultModel, HttpStatus.CREATED);
     }
 
+    @Override
     @PutMapping(Mappings.UPDATE_CATEGORY_BY_ID)
     public ResponseEntity<ResultModel> updateCategory(@PathVariable("id") Long id,
                                                       @Valid @RequestBody CategoryBasicDTO categoryBasicDTO) {
@@ -105,6 +108,7 @@ public class CategoryController {
         return new ResponseEntity<>(resultModel, HttpStatus.OK);
     }
 
+    @Override
     @DeleteMapping(Mappings.DELETE_CATEGORY_BY_NAME)
     public ResponseEntity<?> deleteCategoryByName(@NotBlank @PathVariable(name = "name") String name) {
         log.info("DeleteCategoryByName started with name: {}", name);

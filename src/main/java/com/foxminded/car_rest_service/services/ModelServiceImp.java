@@ -2,6 +2,7 @@ package com.foxminded.car_rest_service.services;
 
 import com.foxminded.car_rest_service.dao.ModelDAO;
 import com.foxminded.car_rest_service.entities.Model;
+import com.foxminded.car_rest_service.exceptions.DataAlreadyExistException;
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.model.ModelDTO;
 import com.foxminded.car_rest_service.mapstruct.mapper.ModelMapper;
@@ -68,11 +69,13 @@ public class ModelServiceImp implements ModelService {
     public ModelBasicDTO updateModel(Long id, ModelBasicDTO modelBasicDTO) {
         log.info("UpdateModel started with id: {}, model: {}", id, modelBasicDTO);
 
+        modelDAO.findByName(modelBasicDTO.getModel()).ifPresent(model -> {
+            throw new DataAlreadyExistException(format("Model with name(%s) already exists", modelBasicDTO.getModel()));
+        });
         return modelDAO.findById(id).map(m -> {
             m.setModel(modelBasicDTO.getModel());
             return mapper.modelToModelBasicDTO(modelDAO.save(m));
         }).orElse(null);
-
     }
 
     @Override

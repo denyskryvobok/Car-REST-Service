@@ -28,3 +28,9 @@ keycloak:
   bearer-only: true
   ssl-required: external
   use-resource-role-mappings: true
+
+springdoc:
+  api-docs:
+    path: /api-docs
+  default-produces-media-type: application/json
+  remove-broken-reference-definitions: false

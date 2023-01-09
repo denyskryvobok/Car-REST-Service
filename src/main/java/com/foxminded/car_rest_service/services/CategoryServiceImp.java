@@ -2,6 +2,7 @@ package com.foxminded.car_rest_service.services;
 
 import com.foxminded.car_rest_service.dao.CategoryDAO;
 import com.foxminded.car_rest_service.entities.Category;
+import com.foxminded.car_rest_service.exceptions.DataAlreadyExistException;
 import com.foxminded.car_rest_service.mapstruct.dto.category.CategoryBasicDTO;
 import com.foxminded.car_rest_service.mapstruct.dto.category.CategoryDTO;
 import com.foxminded.car_rest_service.mapstruct.mapper.CategoryMapper;
@@ -66,6 +67,10 @@ public class CategoryServiceImp implements CategoryService {
     @Override
     public CategoryBasicDTO updateCategory(Long id, CategoryBasicDTO categoryInput) {
         log.info("UpdateCategory started with id: {}, category: {}", id, categoryInput);
+
+        categoryDAO.findByName(categoryInput.getCategory()).ifPresent(category -> {
+            throw new DataAlreadyExistException(format("Category with name(%s) already exists", categoryInput.getCategory()));
+        });
 
         return categoryDAO.findById(id)
                 .map((category -> {
