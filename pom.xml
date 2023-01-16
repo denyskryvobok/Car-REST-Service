@@ -10,7 +10,7 @@
     </parent>
     <groupId>com.foxminded</groupId>
     <artifactId>car_rest_service</artifactId>
-    <version>0.0.1-SNAPSHOT</version>
+    <version>1.0.0</version>
     <name>car_rest_service</name>
     <description>car_rest_service</description>
     <properties>

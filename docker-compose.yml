@@ -1,6 +1,19 @@
+version: '3.7'
 services:
+  car_service:
+    image: denyskry/car-service
+    container_name: car_rest_service
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/car_rest_app
+    depends_on:
+      - postgres
+      - keycloak
+    networks:
+      - backend
   postgres:
-    container_name: car_rest
+    container_name: DB_car_rest
     image: postgres:15.1-alpine
     restart: always
     environment:
@@ -12,6 +25,10 @@ services:
       - .\src\main\resources\db\db_init.csv:/tmp/db_init.csv
     ports:
       - "5480:5432"
+    networks:
+      backend:
+        aliases:
+          - "postgres"
   keycloak:
     container_name: keycloak
     image: jboss/keycloak
@@ -25,9 +42,29 @@ services:
       DB_PASSWORD: 1111
       KEYCLOAK_USER: admin
       KEYCLOAK_PASSWORD: admin
+    volumes:
+      - .\src\main\resources\keycloak\:/tmp/keycloak-import/
+    command:
+      - "-b 0.0.0.0"
+      - "-Djboss.http.port=8180"
+      - "-Dkeycloak.migration.action=import"
+      - "-Dkeycloak.migration.provider=singleFile"
+      - "-Dkeycloak.migration.file=/tmp/keycloak-import/car-service-realm.json"
+      - "-Dkeycloak.migration.strategy=OVERWRITE_EXISTING"
+      - "-Dkeycloak.profile.feature.scripts=enabled"
+      - "-Dkeycloak.profile.feature.upload_scripts=enabled"
+    expose:
+      - 8180
     ports:
-      - "8180:8080"
+      - "8180:8180"
     depends_on:
       - postgres
+    networks:
+      backend:
+        aliases:
+          - "keycloak"
 volumes:
   db:
+networks:
+  backend:
+    driver: bridge
