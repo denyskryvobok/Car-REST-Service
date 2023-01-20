@@ -6,9 +6,9 @@
 
 ## About The Project
 
-It is a RESTful application where you can perform CRUD operations to interact with the data.\
-You can get data about cars or add a new one.\
-You can also interact with manufacturers, categories, and models of cars.
+It is a RESTful application where you can perform CRUD operations to interact with the cars' data.\
+You can also interact with manufacturers, categories, and models of cars.\
+Keycloak authorization server uses to provide security for the application.
 There is swagger documentation for this app.\
 After launching the application go to 'http://localhost:8080/swagger-ui.html'
 
